@@ -1,0 +1,521 @@
+/*******************************************************************************
+Copyright 2003. The U.S. Government, as Represented by the Administrator of
+the National Aeronautics and Space Administration (NASA). All rights reserved.
+Includes content licensed from the U.S. Government, National Aeronautics and
+Space Administration under United States Copyright Registration Numbers
+V3503D364 and V3482D344.
+Copyright 2008-2015 NPSS Consortium, www.NPSSConsortium.org/AllRightsReserved
+*******************************************************************************/
+
+/*******************************************************************************
+NPSS software and related documentation is export controlled with an Export
+Control Classification Number(ECCN) of 9D991, controlled for Anti-Terrorism
+reasons, under U.S. Export Administration Regulations 15 CFR 730-774. It may
+not be transferred to a country checked under anti-terrorism on the Commerce
+Country Chart structure or to foreign nationals of those countries in the U.S.
+or abroad without first obtaining a license from the Bureau of Industry and
+Security, United States Department of Commerce. Violations are punishable by
+fine, imprisonment, or both.
+*******************************************************************************/
+//
+// For further information contact support@npssconsortium.org
+//
+
+#ifndef __BURNER__
+#define __BURNER__
+
+#include <InterpIncludes.ncp>
+
+class Burner extends Element {
+
+//------------------------------------------------------------
+//     ******* DOCUMENTATION *******
+//------------------------------------------------------------
+
+ title = "";
+
+  description = isA() + " will calculate performance for a standard burner.";
+
+  usageNotes = "
+
+- The Burner element performs high level Burner performance
+calculations.  This element works with an entrance fluid and
+fuel stream.  It mixes the two flows together and then 
+performs the burn calculations.  Please note that the Burner
+has no control over the actual fuel stream conditions--fuel type,
+LHV, etc.  These values are properties of the fuel flow itself
+and are usually set in the FuelStart element.   
+
+- There are four ways to specify the Burner exit conditions.  The
+first way is specify the Burner fuel-to-air ratio.  The second way 
+is to set the fuel flow directly in the Burner (and ignore the fuel 
+flow rate coming in through the fuel input port).  The third way is 
+to set the Burner exit temperature.  The fourth way is to set the Burner 
+fuel flow using the fuel flow coming in through the fuel input port. 
+The type of input used is controlled by the Option variable switchBurn.
+
+- Note that if switchBurn is set to FAR, FUEL, or TEMPERATURE, fuel flow rate in
+the element upstream of the Burner (usually a FuelStart element) will NOT be
+the same value as the Burner Wfuel.  The Burner does set Fu_I.Wfuel, but that
+is as far upstream as the fuel flow setting goes.  If the user wishes to relay
+the Burner Wfuel to an upstream element, then the user must set up a 
+solver balance in order to accomplish this.
+
+- When switchBurn is set to FAR (default), the user must input a value
+for Burner FAR (fuel-to-air ratio).  The Burner will set Wfuel based on 
+FAR and the inlet air flow rate.  
+
+- When switchBurn is set to FUEL, the user must input a value for the Burner
+Wfuel.  The Burner will ignore the fuel flow rate coming in through the 
+fuel input port.
+
+- When switchBurn is set to TEMPERATURE, the user must input a value
+for Burner TtCombOut.  The Burner will solve for Wfuel based on TtCombOut, 
+the fuel inlet conditions, and the air inlet conditions.
+
+- When switchBurn is set to WFUEL, the Burner will use fuel flow rate coming in 
+through the fuel input port to set Wfuel.  Burner outputs such as FAR and 
+TtCombOut will still be calculated in the Burner using the fuel inlet
+conditions and the air inlet conditions.
+
+- The burner tracks several different pressure losses.  The first,
+dPqP, accounts for duct friction pressure drops.  The
+second, dPqPRayleigh, accounts for the Rayleigh pressure drop.  
+dPRayleigh is input or calculated - see switchHotLoss, an iteration 
+is necessary since the pressure loss itself is a function of the 
+exit conditions. 
+
+- The user can request a pre burner pressure loss dPqP.  The 
+pressure loss calculations are performed before all the other
+calculations are done.  This means that the combustion entrance 
+pressure will not match the value indicated by the burner entrance.
+
+- Burner efficiency (eff) is calculated as follows: effBase * s_eff + a_eff.
+If the S_eff socket is filled, then effBase will be set by the socket.  
+Otherwise, the user may input a value between 0 and 1 for effBase.
+Efficiency is used in the Fl_Ocomb FlowStation as follows:
+Fl_Ocomb.burn( Fu_I, eff ).  Therefore, efficiency only applies to 
+thermo packages whose burn function supports efficiency as an input.
+(NOTE: the CEA burn function ignores eff.  See the NPSS Thermodynamic Property
+Package User Guide for more information on burn efficiency in CEA)
+
+- Heat transfer rate (Qhx) between the fluid and burner structural material may 
+be specified by the user.  If the S_Qhx socket is filled, then Qhx will be set
+by the socket.  Qhx is commonly used to model thermal transients during
+transient operation.  Qhx is applied to the fluid exit conditions (affecting
+exit enthalpy and temperature) after all other burner calculations are
+performed.
+";
+
+background = "";
+
+  //------------------------------------------------------------
+  //     ******* SETUP VARIABLES ********
+  //------------------------------------------------------------
+
+  real a_dPqPf {
+    value = 0.0;  IOstatus = "input";  units = "none";
+    description = "Duct friction pressure drop adder";
+  }
+  real a_dPqPfAud {
+    value = 0.0;  IOstatus = "unset";  units = "psia";
+    description = "Audit factor adder applied to pressure ratio";
+  }
+  real a_eff {
+    value = 0.0;  IOstatus = "input";  units = "none";
+    description = "Adiabatic efficiency adder";
+  }
+  real dPqPf {
+    value = 0.0;  IOstatus = "output";  units = "none";
+    description = "Adjusted duct friction pressure drop";
+  }
+  real dPqP {
+    value = 0.0;  IOstatus = "output";  units = "none";
+    description = "Overall pressure drop";
+  }
+  real dPqP_dmd {
+    value = 0.0;  IOstatus = "input";  units = "none";
+    description = "Duct friction pressure drop ";
+  }
+  real dPqPRayleigh {
+    value = 0.0;  IOstatus = "input";  units = "none"; 
+    description = "Adjusted Rayleigh pressure drop";
+  }
+  real eff {
+    value = 1.0;  IOstatus = "output";  units = "none";
+    description = "Adjusted adiabatic burner efficiency";
+  }
+  real effBase {
+    value = 1.0;  IOstatus = "input";  units = "none";
+    description = "Adiabatic burner efficiency, from socket ";
+  }
+  real FAR {
+    value = 0.0;  IOstatus = "output";  units = "none";
+    description = "Fuel-to-air ratio";
+  }
+  real FARDes {
+    value = 0.0;  IOstatus = "output";  units = "none";
+    description = "Fuel-to-air ratio at design";
+  }
+  real fuelFractV {
+    value = 0.0;  IOstatus = "input";	units = "none";
+    description = "Fraction of the incoming flow velocity fuel enters the burner";
+  }
+  real Qhx {
+    value = 0.0;  IOstatus = "input";  units = "Btu/sec";
+    description = "Heat loss to thermal mass storage";
+  }
+  real PqPRayleigh {
+    value = 1.0;  IOstatus = "output";  units = "none";
+    description = "Adjusted Rayleigh pressure drop";
+  }
+  real PqPRayleighDelta {
+    value = 0.0;  IOstatus = "output";  units = "none";
+    description = "Bounded Rayleigh pressure drop - for loop only";
+  }
+  real PqPRayleighError {
+    value = 1.0;  IOstatus = "output";  units = "none";
+    description = "Adjusted Rayleigh pressure drop error";
+  }
+  real PqPRayleighMin {
+    value = 0.05;  IOstatus = "input";  units = "none";
+    description = "Rayleigh pressure drop lower limit - for loop only";
+  }
+  real PqPRayleighStep {
+    value = 0.05;  IOstatus = "input";  units = "none";
+    description = "Maximum step for Rayleigh pressure drop - for loop only";
+  }
+  real PqPRayleighNew {
+    value = 1.0;  IOstatus = "output";  units = "none";
+    description = "Previous adjusted Rayleigh pressure drop - for loop only";
+  }
+  real s_dPqPf {
+    value = 1.0;  IOstatus = "input";  units = "none";
+    description = "Duct friction pressure drop scalar";
+  }
+  real s_dPqPfAud {
+    value = 1.0;  IOstatus = "unset";  units = "none";
+    description = "Audit factor scalar applied to pressure ratio";
+  }
+  real s_eff {
+    value = 1.0;  IOstatus = "input";  units = "none";
+    description = "Adiabatic efficiency scalar";
+  }
+  real tolRayleigh {
+    value = 4e-05;  IOstatus = "input";  units = "none";
+    description = "Iteration tolerance on momentum pressure drop";
+  }
+  real tolWfuel {
+    value = 1e-05;  IOstatus = "input";  units = "none";
+    description = "Iteration tolerance on temperature burn";
+  }
+  real TtCombOut {
+    value = 0.0;  IOstatus = "input";  units = "R";
+    description = "Exit temperature";
+  }
+  real TtLast {
+    value = 0.0;  IOstatus = "input";  units = "R";
+    description = "Previous exit temperature - for loop only";
+  }
+  real Wfuel {
+    value = 0.0;  IOstatus = "input";  units = "lbm/sec";
+    description = "Combustor fuel flow";
+  }
+  real WfuelError {
+    value = 0.0;  IOstatus = "input";  units = "lbm/sec";
+    description = "Combustor fuel flow error";
+  }
+  real WfuelLast {
+    value = 0.0;  IOstatus = "input";  units = "lbm/sec";
+    description = "Previous combustor fuel flow - for loop only";
+  }
+  real WfuelNew {
+    value = 0.0;  IOstatus = "input";  units = "lbm/sec";
+    description = "Next combustor fuel flow - for loop only";
+  }
+  int countFuel {
+    value = 0;  IOstatus = "output";
+    description = "Fuel loop counter";
+  }
+  int countFuelMax {
+    value = 50;  IOstatus = "input";
+    description = "Fuel loop maximum counter";
+  }
+  int countRayleigh {
+    value = 0;  IOstatus = "output";
+    description = "Rayleigh loop counter";
+  }
+  int countRayleighMax {
+    value = 25;  IOstatus = "input";
+    description = "Rayleigh loop maximum counter";
+  }
+  int flagRayleighLossTooMuch {
+    value = 0;  IOstatus = "output";
+    description = "If true, Rayleigh loop results in too much loss";
+  }
+  int flagRayleighChoked {
+    value = 0;  IOstatus = "output";
+    description = "If true, Rayleigh loop results in supersonic flow";
+  }
+
+  //------------------------------------------------------------
+  //   ******* OPTION VARIABLE SETUP *******
+  //------------------------------------------------------------
+
+  Option switchAud {
+    allowedValues = { "BASE", "AUDIT" }
+    description = "Determines if the audit factors are used";
+    IOstatus = "input";
+    trigger=TRUE;
+    rewritableValues = FALSE;  // Enables converter optimization.
+  }
+
+  Option switchBurn {
+    allowedValues = { "FAR", "FUEL", "WFUEL", "TEMPERATURE" };
+    description = "Switch determines if burner is running to fuel flow, FAR, or T4.  Setting option to FUEL will burn using the burner value as an input.  Setting the option to WFUEL will burn using the value coming in from the fuel station.";
+    trigger=TRUE;
+    rewritableValues = FALSE;
+  }
+
+  Option switchDes {
+    allowedValues = { "DESIGN", "OFFDESIGN" };
+    description = "Design switch";
+    trigger=FALSE;
+    rewritableValues = FALSE;
+  }
+  // input kept in for backward compatible (remove later)
+  Option switchHotLoss {
+    allowedValues = { "INPUT", "CALCULATE","input" };
+    description = "Switch determines if the hot pressure loss is input or iterated on";
+    trigger=TRUE;
+    rewritableValues = FALSE;
+  }
+	
+  //------------------------------------------------------------
+  // ****** SETUP PORTS, FLOW STATIONS, SOCKETS, TABLES ********
+  //------------------------------------------------------------
+  
+  // FLUID PORTS
+  FluidInputPort Fl_I {
+    description = "Incoming flow";
+  }
+  
+  FluidOutputPort Fl_O {
+    description = "Exiting flow";
+  }
+  
+  // FUEL PORTS
+  
+  FuelInputPort Fu_I {
+    description = "Incoming fuel flow";
+  }
+  
+  // BLEED PORTS
+  
+  // THERMAL PORTS
+  
+  // MECHANICAL PORTS
+  
+  // FLOW STATIONS
+  
+  FlowStation Fl_Icomb {
+	    description = "Inlet station to combustion section of burner
+ (after the initial pressure loss is applied)";
+  }
+  
+  FlowStation Fl_Ocomb {
+    description = "Exit station to combustion section of burner
+ (before thermal storage heat transfer is calculated)";
+  }
+  
+  // SOCKETS
+  
+  Socket S_dPqPf {
+    allowedValues = { "dPqP_dmd" };
+    description = "Dry duct pressure loss";
+ //   socketType = "dPqP";
+    socketType = "ADIAB_DPNORM";
+  }
+  
+  Socket S_eff {
+    allowedValues = { "effBase" };
+    description = "Burner adiabatic efficiency";
+    socketType = "BURN_EFFICIENCY";
+  }
+  
+  Socket S_Qhx {
+    allowedValues = { "Qhx" };
+    description = "Thermal storage socket";
+    socketType = "HEATTRANSFER";
+  }
+  
+
+  // TABLES
+
+  //------------------------------------------------------------
+  // ******* INTERNAL SOLVER SETUP *******
+  //------------------------------------------------------------
+  
+  //------------------------------------------------------------
+  //  ******  ADD SOLVER INDEPENDENTS & DEPENDENTS  ******
+  //------------------------------------------------------------
+  
+  //------------------------------------------------------------
+  // ******* VARIABLE CHANGED METHODOLOGY *******
+  //------------------------------------------------------------
+  void variableChanged( string name, any oldVal ) {
+    
+    if( name == "switchBurn" ) {
+      if ( switchBurn == "FAR" ) {
+	FAR.IOstatus = "input";
+	Wfuel.IOstatus = "output";
+	TtCombOut.IOstatus = "output";
+      }
+      else if ( switchBurn == "FUEL" ) {
+	FAR.IOstatus = "output";
+	Wfuel.IOstatus = "input";
+	TtCombOut.IOstatus = "output";
+      }
+      else if ( switchBurn == "WFUEL" ) {
+	FAR.IOstatus = "output";
+	Wfuel.IOstatus = "output";
+	TtCombOut.IOstatus = "output";
+      }
+      else if ( switchBurn == "TEMPERATURE" ) {
+	FAR.IOstatus = "output";
+	Wfuel.IOstatus = "output";
+	        TtCombOut.IOstatus = "input";
+      }
+    }
+
+    else if( name == "switchHotLoss" ) {
+      if ( switchHotLoss == "INPUT" ) {
+	dPqPRayleigh.IOstatus = "input";
+      }
+      else if ( switchHotLoss == "input"  ){ switchHotLoss = "INPUT"; }
+      else {
+	dPqPRayleigh.IOstatus = "output";
+      }
+    }
+
+    else if( name == "switchAud" ) {
+      a_dPqPfAud.IOstatus  = "inactive";
+      s_dPqPfAud.IOstatus  = "inactive";
+	  
+      if( switchAud == "AUDIT" ) {
+	a_dPqPfAud.IOstatus  = "input";
+	s_dPqPfAud.IOstatus  = "input";
+      }
+    }
+  } // end variableChanged()
+  
+  
+  
+  
+  
+  
+  
+  //------------------------------------------------------------
+  //   ******* ACTUAL RDE CHANGES *******						===========================================================================================================================================================
+  //------------------------------------------------------------
+  
+  
+ 
+ calculate() {
+    string result = interpolate_RDE_table(Fl_I.W, Fl_I.Pt, Fl_I.Tt);
+	//This recieves the input as a concatonated string, then separates it into Pt and Tt
+		int eq_pos = result.find("=");
+		string Pt_str = result.substr(0, eq_pos);
+		string Tt_str = result.substr(eq_pos + 1);
+		real Pt_out = toReal(Pt_str);
+		real Tt_out = toReal(Tt_str);
+		Fl_O.Pt = Pt_out;
+		Fl_O.Tt = Tt_out;
+		
+   
+  real ER =0.862;  // equivalence ratio
+  real stoich_FAR = 0.293;  //This may be too large ask Kevin is oxidizer being O2 instead of air is the cause?
+  real FAR = ER * stoich_FAR;
+  Wfuel = FAR * Fl_I.W;
+  
+  // Set outputs and fluid properties
+  Fl_O.Pt = Pt_out;
+  Fl_O.W = Fl_I.W;
+  Fu_O.W = Wfuel;
+  Fl_O.copyFlow("Fl_I");
+  Fl_O.FAR = FAR;
+  Fl_O.setTotal_hP(<enthalpy>, Fl_O.Pt);
+}
+ 
+ 
+ real interpolate_RDE_table(real W, real Pt, real Tt) {
+  // Do interpolation
+  // Return Pt and Tt as "Pt=Tt" or some similar concatonated string format
+}
+ 
+ 
+ 
+ // Table output
+ // 	PR (Pressure Ratio) or Pt
+ // 	Tt_out (Exit Total Temperature)
+ // 	eff (Combustion Efficiency) (we can hardcode this)
+ //
+ //
+ //
+ //
+ //
+ 
+
+ 
+ 
+ //  REQUIRED OUTPUTS CHECK LIST
+ // FL_O 
+ // 	Fl_O.Pt - Total pressure at exit
+ // 	Fl_O.Tt - Total temperature at exit
+ // 	Fl_O.W - Air mass flow rate (just copy from Fl_I.W)
+ // 	Fl_O.FAR - Fuel-to-air ratio
+ // Fu_O
+ // 	Fu_O.W - Fuel mass flow rate
+ // Performance Variables
+ // 	Wfuel - Fuel flow (same as Fu_O.W)
+ // 	dPqP - Pressure drop ratio (ΔP/P)
+ //
+ //
+ // Notes
+ // use Fl_O.setTotal_hP() so that the following are automatic
+ // 	Fl_O.ht - Total enthalpy
+ // 	Fl_O.s - Entropy
+ // 	Fl_O.Ps - Static pressure
+ // 	Fl_O.Ts - Static temperature
+ // 	Fl_O.MN - Mach number (if area is set)
+ // 	Fl_O.gams - Ratio of specific heats
+ // 	Fl_O.V - Velocity
+ // 	Fl_O.rhos - Static density
+ //
+ //
+ //
+ //
+ //
+ //
+ //
+ //
+ 
+ 
+  //------------------------------------------------------------
+  //   ******* END RDE CHANGES *******						===============================================================================================================================================================
+  //------------------------------------------------------------
+ 
+ 
+  //------------------------------------------------------------
+  // register the appropriate errors at build time
+  //------------------------------------------------------------
+  void VCinit()
+  {
+    ESOregCreate( 1023901, 8, "", TRUE, FALSE, TRUE ); // provisional
+    ESOregCreate( 1093901, 8, "", TRUE, FALSE, TRUE ); // provisional
+  }
+  
+  }
+  
+#endif
+  
