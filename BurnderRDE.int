@@ -460,10 +460,71 @@ Q_heat = Wfuel * LHV * eff;
  
  
  real interpolate_RDE_table(real W, real Pt, real Tt) {
-  // Do interpolation
-  // Return Pt and Tt as "Pt=Tt" or some similar concatonated string format
+  // Read csv get 8 output pairs in the "pT=Tt" format following trilinear vertices naming convention
+    string result = trilinear_interpolate(W, Pt, Tt, W_lower, W_upper, Pt_lower, Pt_upper, Tt_lower, Tt_upper, V000, V100, V010, V110, V001, V101, V011, V111);
+  // Vertices dimensions are W,Pt,Tt
+  return result;
 }
- 
+string trilinear_interpolate(real W, real Pt, real Tt,
+                             real W_lower, real W_upper,
+                             real Pt_lower, real Pt_upper,
+                             real Tt_lower, real Tt_upper,
+                             string V000, string V100, string V010, string V110,
+                             string V001, string V101, string V011, string V111) {
+  
+  // Calculate interpolation weights
+  real w_d = (W - W_lower) / (W_upper - W_lower);
+  real p_d = (Pt - Pt_lower) / (Pt_upper - Pt_lower);
+  real t_d = (Tt - Tt_lower) / (Tt_upper - Tt_lower);
+  
+  // Parse all 8 corner strings into Pt and Tt values
+  real Pt000, Tt000, Pt100, Tt100, Pt010, Tt010, Pt110, Tt110;
+  real Pt001, Tt001, Pt101, Tt101, Pt011, Tt011, Pt111, Tt111;
+  
+  parse_string(V000, Pt000, Tt000);
+  parse_string(V100, Pt100, Tt100);
+  parse_string(V010, Pt010, Tt010);
+  parse_string(V110, Pt110, Tt110);
+  parse_string(V001, Pt001, Tt001);
+  parse_string(V101, Pt101, Tt101);
+  parse_string(V011, Pt011, Tt011);
+  parse_string(V111, Pt111, Tt111);
+  
+  // Interpolate Pt values
+  real Pt_interp = 
+    Pt000 * (1-w_d) * (1-p_d) * (1-t_d) +
+    Pt100 * (w_d)   * (1-p_d) * (1-t_d) +
+    Pt010 * (1-w_d) * (p_d)   * (1-t_d) +
+    Pt110 * (w_d)   * (p_d)   * (1-t_d) +
+    Pt001 * (1-w_d) * (1-p_d) * (t_d)   +
+    Pt101 * (w_d)   * (1-p_d) * (t_d)   +
+    Pt011 * (1-w_d) * (p_d)   * (t_d)   +
+    Pt111 * (w_d)   * (p_d)   * (t_d);
+  
+  // Interpolate Tt values
+  real Tt_interp = 
+    Tt000 * (1-w_d) * (1-p_d) * (1-t_d) +
+    Tt100 * (w_d)   * (1-p_d) * (1-t_d) +
+    Tt010 * (1-w_d) * (p_d)   * (1-t_d) +
+    Tt110 * (w_d)   * (p_d)   * (1-t_d) +
+    Tt001 * (1-w_d) * (1-p_d) * (t_d)   +
+    Tt101 * (w_d)   * (1-p_d) * (t_d)   +
+    Tt011 * (1-w_d) * (p_d)   * (t_d)   +
+    Tt111 * (w_d)   * (p_d)   * (t_d);
+  
+  // Return as concatenated string
+  string result = toStr(Pt_interp) + "=" + toStr(Tt_interp);
+  return result;
+}
+
+// Helper function
+void parse_string(string input, real &Pt_val, real &Tt_val) {
+  int eq_pos = input.find("=");
+  string Pt_str = input.substr(0, eq_pos);
+  string Tt_str = input.substr(eq_pos + 1);
+  Pt_val = toReal(Pt_str);
+  Tt_val = toReal(Tt_str);
+}
  
  
  // Table output
