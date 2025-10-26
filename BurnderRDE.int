@@ -431,9 +431,11 @@ calculate() {
     // Apply pre-combustor duct pressure loss (if any)
     //------------------------------------------------------------
     real Pt_comb_inlet = Fl_I.Pt;  // Pressure entering combustion
+	//TODO: are we including duct losses in the table? If so, delete this
+	//Pt_comb_inlet = Fl_I.Pt * (1.0 - dPqP_dmd);
     
     if (abs(dPqP_dmd) > 0.0001) {
-        real dPqPf = dPqP_dmd * s_dPqPf + a_dPqPf;
+        real dPqPf = dPqP_dmd * s_dPqPf + a_dPqPf; // dmd is duct loss, next are scalar p loss and p loss adder. I do not know what those are but the original model had them so I'm keeping them
         Pt_comb_inlet = Fl_I.Pt * (1.0 - dPqPf);
     }
     
@@ -451,14 +453,14 @@ calculate() {
             // Wfuel is already set from .mdl file (e.g., Wfuel = 0.35)
             FAR = Wfuel / Fl_I.W;
         }
-        else if (switchBurn == "FAR") {
+        else if (switchBurn == "FAR") { // using FAR as known design point
             // Calculate based on equivalence ratio
             real ER = 0.862;  // equivalence ratio at design
             real stoich_FAR = 0.293;  // ChatGPT thinks 0.293 is too high, maybe Kevin used O2 as oxidizer?
             FAR = ER * stoich_FAR;
             Wfuel = FAR * Fl_I.W;
         }
-        else if (switchBurn == "WFUEL") {
+        else if (switchBurn == "WFUEL") { // when fuel flow is dictated by FuelStart element from previous point in model
             Wfuel = Fu_I.W;
             FAR = Wfuel / Fl_I.W;
         }
@@ -489,15 +491,15 @@ calculate() {
         //====================================================
         
         // Fuel flow control
-        if (switchBurn == "FUEL") {
+        if (switchBurn == "FUEL") { //Fuel controller controls fuel flow
             // Wfuel is set by fuel controller or user
             FAR = Wfuel / Fl_I.W;
         }
-        else if (switchBurn == "FAR") {
+        else if (switchBurn == "FAR") { //we choose our own FAR that is maintained
             // FAR is specified, calculate Wfuel
             Wfuel = FAR * Fl_I.W;
         }
-        else if (switchBurn == "WFUEL") {
+        else if (switchBurn == "WFUEL") { // when fuel flow is dictated by FuelStart element from previous point in model
             Wfuel = Fu_I.W;
             FAR = Wfuel / Fl_I.W;
         }
@@ -552,6 +554,7 @@ calculate() {
   // Vertices dimensions are W,Pt,Tt
   return result;
 }
+
 string trilinear_interpolate(real W, real Pt, real Tt,
                              real W_lower, real W_upper,
                              real Pt_lower, real Pt_upper,
@@ -709,8 +712,8 @@ int find_lower_index(real[] grid, real query_value) {
  // 	Fl_O.rhos - Static density
  //
  //
- //
- //
+ //		TODO: Does pressure inputed into RDE table include duct losses or not?
+ //		TODO: Pressure loss before, after RDE? Or included in RDE table?
  //
  //
  //
