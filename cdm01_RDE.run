@@ -1,0 +1,40 @@
+//-------------------------------------------------
+// CDM01_TF00 High Bypass Fanjet Model: cdm01_tf00_A
+//-------------------------------------------------
+// Basic fanjet model with default thermodynamics package
+// Steady-state cases: design and off-design
+// Transient cases: none
+
+
+//-------------------------------------------------
+// How to run
+//-------------------------------------------------
+// - In order to use this run file, specify the location of all
+//   relevant files by using -I flags
+// - The -I flags specify the location of directories for the custom elements,
+//   maps, view files, models, source files, etc.
+// - The -I flag enables NPSS to search in the subsequent directory for files
+// - In order to run cdm01_tf00_A.run enter the following into a NPSS
+//   command environment:
+//		   >> runnpss cdm01_tf00_A.run -I ../src -I ../data -I ../model
+
+
+// Default includes
+#include "tf00PageSummary.view" 	//Default page viewer
+
+// Model file
+#include "cdm01_tf00.mdl"
+
+#include "printThermo.inp"
+
+//-------------------------------------------------
+// Run a design case
+//-------------------------------------------------
+
+#include "design.inp"
+
+//-------------------------------------------------
+// Run an off design case
+//-------------------------------------------------
+
+#include "offDesign.inp"
