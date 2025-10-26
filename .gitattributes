@@ -1,2 +1,4 @@
 *.int linguist-language=C
 *.h linguist-language=C
+*.run linguist-language=C
+*.mdl linguist-language=C
