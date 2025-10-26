@@ -1,0 +1,408 @@
+//-------------------------------------------------
+//	cdm01_tf00: Common Development Model (CDM) Turbo Fan 00 (TF00)
+//	UNCLASSIFIED / Non-Proprietary
+//	Generic NPSS High Bypass Fanjet Model
+MODELNAME = "cdm01_tf00";
+
+//-------------------------------------------------
+// How to run
+//-------------------------------------------------
+// - This model is called by the run files in the 'check' directory
+// - However, this model can also be run independently by using -I flags
+// - The -I flags specify the location of directories for the custom elements,
+//   turbine maps, and compressor maps
+// - The -I flag enables NPSS to search in the subsequent directory for files
+// - In order to run cdm01_tf00.mdl independent of a run file, enter the
+//   following into a NPSS command environment:
+//		   >> runnpss cdm01_tf00.mdl -I ../src -I ../data
+
+
+//-------------------------------------------------
+// Set thermodynamic package
+//-------------------------------------------------
+
+// Make GasTbl the default thermo package so that model will build independent of run file.
+// "$THERMO" can be defined in the run file, and if it is, it will not be redefined here
+// in the model file.
+#ifndef THERMO
+	#define THERMO GasTbl
+#endif
+if ("$THERMO" == "CEA") {
+	setThermoPackage( "CEA", "thermo.inp", "trans.inp", "Air", "H2O", "JP_7",
+	"","","","","","", "Inert_JP_7" );
+}
+else {
+	setThermoPackage("$THERMO");
+}
+
+//-------------------------------------------------
+// NPSS macro to set up bleed flows
+//-------------------------------------------------
+#include "bleed_macros.fnc"
+
+// ------------------------------
+//      Option Variables
+// ------------------------------
+Option switchDes {
+	description = "Determines if the model is in design or off-design mode";
+	IOstatus = "input";
+	rewritableValues = FALSE;
+	trigger = FALSE;
+	allowedValues = {"DESIGN","OFFDESIGN"};
+}
+
+// ------------------------------------------------
+// Engine Definition
+// ------------------------------------------------
+// Eng Assembly contains the following major groups of elements
+//  1. Free Stream definition - establish ambient conditions
+//  2. Front Face definition - flow splitting
+//  3. Bypass Stream definition - Fan, duct and nozzle
+//  4. Core Stream definition - LPC, HPC, burner, HPT, and LPT
+//  5. Shaft definition - HP and LP shafts
+//  6. Performance calculations
+//  7. Component linkages
+//  8. Fuel controller
+//  9. Solver settings
+
+// 1. Free Stream definition - establish ambient conditions
+
+// ------------------------------
+//      Ambient Amb
+// ------------------------------
+Element Ambient Amb {
+	switchMode = "ALDTMN";
+	alt_in = 35000.;
+	dTs_in = 0.;
+	MN_in = 0.8;
+}
+
+// ------------------------------
+//      InletStart InletStart
+// ------------------------------
+Element InletStart InletStart{
+	AmbientName = "Amb";
+	W_in = 100.;
+}
+
+// 2. Front Face definition - inlet flow splitting
+
+// ------------------------------
+//      Inlet InEng
+// ------------------------------
+Element Inlet InEng {
+	PqP_in = 0.995;
+}
+
+// ------------------------------
+//      Splitter SpltFan
+// ------------------------------
+Element Splitter SpltFan {
+	BPRdes = 5.;
+}
+
+// 3. Bypass Stream definition - Fan, duct and nozzle
+
+// ------------------------------
+//      Compressor CmpFSec
+// ------------------------------
+Element Compressor CmpFSec {
+	Subelement CompressorRlineMap S_map {
+		#include "CompressorRlineMap_EEE_fan.map";
+	}
+	PRdes  = 1.5;
+	effDes= 0.8589;
+	Sh_O.inertia = 10.;
+}
+
+// ------------------------------
+//      Bleed B025in
+// ------------------------------
+Element Bleed B025in {
+}
+
+// ------------------------------
+//      Duct Dfan
+// ------------------------------
+Element Duct Dfan {
+}
+
+// ------------------------------
+//      Bleed BFanOB
+// ------------------------------
+Element Bleed BFanOB {
+	BleedOutPort BFanOB {
+		hscale = 1.0;
+		Pscale = 1.0;
+		fracW = .00;
+	}
+}
+
+// ------------------------------
+//      Nozzle NozSec
+// ------------------------------
+Element Nozzle NozSec {
+	PsExhName = "Amb.Ps";
+}
+
+// 4. Core Stream definition - LPC, HPC, burner, HPT, and LPT
+
+// ------------------------------
+//      Compressor CmpL
+// ------------------------------
+Element Compressor CmpL {
+	Subelement CompressorRlineMap S_map {
+		#include "CompressorRlineMap_EEE_LPC.map";
+	}
+	PRdes  = 3.0;
+	effDes = 0.872;
+	Sh_O.inertia = 10.;
+}
+
+// ------------------------------
+//      Bleed B025
+// ------------------------------
+Element Bleed B025 {
+}
+
+// ------------------------------
+//      Duct D025
+// ------------------------------
+Element Duct D025{
+    switchDP="OFF";
+    dPqP_in = 0.002;
+}
+
+// ------------------------------
+//      Compressor CmpH
+// ------------------------------
+Element Compressor CmpH {
+	Subelement CompressorRlineMap S_map {
+		#include "CompressorRlineMap_EEE_HPC.map";
+	}
+	PRdes = 10.0;
+	effDes = 0.8522;
+	Sh_O.inertia = 10.;
+
+	Subelement ThermalMass S_Qhx {
+		Ahx = 35743.5;
+		CpMat = 1.0;
+		ChxDes = .0003858;
+		massMat = 500;
+		wtdAvg_Fl = .5;
+	}
+}
+
+// ------------------------------
+//      FuelStart FusEng
+// ------------------------------
+Element FuelStart FusEng {
+	LHV = 19338;
+}
+
+// ------------------------------
+//      Burner BrnPri
+// ------------------------------
+Element Burner BrnPri {
+	dPqP_dmd = 0.05;
+	effBase = 0.98;
+
+	switchHotLoss = "input";
+	switchBurn = "FUEL";
+	Wfuel = .35;
+	tolRayleigh = 0.0001;
+}
+
+// ------------------------------
+//      Bleed B041
+// ------------------------------
+Element Bleed B041 {
+}
+
+// ------------------------------
+//      Turbine TrbH
+// ------------------------------
+Element Turbine TrbH {
+	Subelement TurbinePRmap S_map {
+		#include "TurbinePRmap_EEE_HPT.map";
+	}
+
+	PRbase = 4.984;
+	effDes = 0.89;
+
+	Subelement ThermalMass S_Qhx {
+		Ahx = 3574.35;
+		CpMat = 1.0;
+		ChxDes = .0003858;
+		massMat = 100;
+		wtdAvg_Fl = .5;
+	}
+}
+
+// ------------------------------
+//      Bleed B042
+// ------------------------------
+Element Bleed B042 {
+}
+
+// ------------------------------
+//      Duct D043
+// ------------------------------
+Element Duct D043 {
+	switchDP = "INPUT";
+	void preexecute() {
+		dPqP_in = 0.25 * Fl_I.MN * Fl_I.MN;
+	}
+	Fl_I.MNdes = 0.4;
+}
+
+// ------------------------------
+//      Turbine TrbL
+// ------------------------------
+Element Turbine TrbL {
+	Subelement TurbinePRmap S_map {
+		#include "TurbinePRmap_EEE_LPT.map";
+	}
+	PRbase = 4.2915;
+	effDes = 0.8777;
+}
+
+// ------------------------------
+//      Bleed B045
+// ------------------------------
+Element Bleed B045 {
+}
+
+// ------------------------------
+//      Nozzle NozPri
+// ------------------------------
+Element Nozzle NozPri {
+	PsExhName = "Amb.Ps";
+}
+
+// ------------------------------
+//      FlowEnds
+// ------------------------------
+Element FlowEnd FePri {
+}
+
+Element FlowEnd FeSec {
+}
+
+Element FlowEnd FeFanOB {
+}
+
+// 5. Shaft definition - HP and LP shafts
+
+// ------------------------------
+//      Shaft ShH
+// ------------------------------
+Element Shaft ShH {
+	ShaftInputPort MeCmpH, MeTrbH;
+	Nmech = 8997.43;
+	inertia = .93243;
+}
+
+// ------------------------------
+//      Shaft ShL
+// ------------------------------
+Element Shaft ShL {
+	ShaftInputPort MeCmpFSec, MeCmpL, MeTrbL;
+	Nmech = 3497.40;
+	inertia = 2.73513;
+}
+
+// 6. Performance calculations
+
+// ------------------------------
+//      EngPerf Perf
+// ------------------------------
+Element EngPerf Perf {
+}
+
+// ------------------------------
+//      Cycle Parameters
+// ------------------------------
+Element Cycle Cycle {
+	EPR_numName = "CmpH.Fl_O";
+	EPR_denName = "InEng.Fl_O";
+	FPR_numName = "CmpFSec.Fl_O";
+	FPR_denName = "InEng.Fl_O";
+}
+
+// 7. Component linkages
+
+// -------------------------------
+// Component Links
+// -------------------------------
+linkPorts( "InletStart.Fl_O", "InEng.Fl_I",        "F010"    );
+linkPorts( "InEng.Fl_O",      "SpltFan.Fl_I",      "F010a"  );
+// Primary section
+linkPorts( "SpltFan.Fl_O1",   "CmpL.Fl_I",         "F025"  );
+linkPorts( "CmpL.Fl_O",       "B025.Fl_I",         "F0251" );
+linkPorts( "B025.Fl_O",       "D025.Fl_I",         "F0252" );
+linkPorts( "D025.Fl_O",       "CmpH.Fl_I",         "F0253" );
+linkPorts( "CmpH.Fl_O",       "BrnPri.Fl_I",       "F030"   );
+linkPorts( "FusEng.Fu_O",     "BrnPri.Fu_I",       "FU036" );
+// Primary Hot Section Connect Statements:
+linkPorts( "BrnPri.Fl_O",     "B041.Fl_I",         "F041"  );
+linkPorts( "B041.Fl_O",       "TrbH.Fl_I",         "F041a" );
+linkPorts( "TrbH.Fl_O",       "B042.Fl_I",         "F042"  );
+linkPorts( "B042.Fl_O",       "D043.Fl_I",         "F043"  );
+linkPorts( "D043.Fl_O",       "TrbL.Fl_I",         "F044"  );
+linkPorts( "TrbL.Fl_O",       "B045.Fl_I",         "F045"  );
+linkPorts( "B045.Fl_O" ,      "NozPri.Fl_I",       "F070"   );
+linkPorts( "NozPri.Fl_O",     "FePri.Fl_I",        "F090"   );
+// Fan duct section:
+linkPorts( "SpltFan.Fl_O2",   "CmpFSec.Fl_I",      "F120"   );
+linkPorts( "CmpFSec.Fl_O",    "B025in.Fl_I",       "F110"   );
+linkPorts( "B025in.Fl_O",     "Dfan.Fl_I",         "F160"   );
+linkPorts( "Dfan.Fl_O",       "BFanOB.Fl_I",       "F165"  );
+linkPorts( "BFanOB.Fl_O",     "NozSec.Fl_I",       "F170"   );
+linkPorts( "NozSec.Fl_O",     "FeSec.Fl_I",        "F190"   );
+
+// -------------------------------
+//      Bleed Connections
+// -------------------------------
+// Component to Component Bleed
+linkBleedCT( "CmpH", "TrbH",   .10, 1., 1., 1., 0, "ca1HPT" );
+linkBleedCB( "CmpH", "B042",   .04, 1., 1.,        "ca2HPT" );
+linkBleedCB( "CmpH", "B045",   .01, .5, .5,        "ca3HPT" );
+linkBleedBB( "B025", "B025in",   .00, 1., 1.,      "surge"  );
+
+//Overboard bleed
+linkPorts( "BFanOB.BFanOB",   "FeFanOB.Fl_I",      "FL166");
+
+// -------------------------------
+//      Shaft Connect Statements
+// -------------------------------
+linkPorts( "CmpL.Sh_O",      "ShL.MeCmpL",   "MeCmpL" );
+linkPorts( "CmpFSec.Sh_O",   "ShL.MeCmpFSec","MeCmpFSec" );
+linkPorts( "TrbL.Sh_O"   ,   "ShL.MeTrbL",   "MeTrbL" );
+linkPorts( "CmpH.Sh_O",      "ShH.MeCmpH",   "MeCmpH" );
+linkPorts( "TrbH.Sh_O",      "ShH.MeTrbH",   "MeTrbH" );
+
+// 8. Fuel controller
+// Fuel controller use is optional for steady-state.
+// Fuel for steady-state may be set directly through BrnPri.Wfuel.
+// Fuel controller is used during transient runs to adjust BrnPri.Wfuel to
+// achieve a target power level specified by the input power lever angle (PLA_CS).
+
+// ------------------------------
+//      FuelControl FuPriCtr
+// ------------------------------
+
+Element FuelControl FuPriCtr {
+  PLA_CS = 50;
+  Tt041_max = 3206.;
+  NcPctL_max = 105.;
+  NmechL_max = 13000.;
+}
+
+// 9. Solver settings
+
+//-------------------------------------------------
+// Solver Settings
+//-------------------------------------------------
+solver.debugLevel = "ITERATION_DETAILS";
+solver.diagnosticFile = "solver.diag";
