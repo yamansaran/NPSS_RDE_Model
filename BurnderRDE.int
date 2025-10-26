@@ -421,41 +421,120 @@ background = "";
   
   
  
- calculate() {
-	string result = interpolate_RDE_table(Fl_I.W, Fl_I.Pt, Fl_I.Tt);
-	//This recieves the input as a concatonated string, then separates it into Pt and Tt
-		int eq_pos = result.find("=");
-		string Pt_str = result.substr(0, eq_pos);
-		string Tt_str = result.substr(eq_pos + 1);
-		real Pt_out = toReal(Pt_str);
-		real Tt_out = toReal(Tt_str);
-		Fl_O.Pt = Pt_out;
-		Fl_O.Tt = Tt_out;
-		
-// Fuel calculations
-real ER =0.862;  // equivalence ratio
-real stoich_FAR = 0.293;  //This may be too large ask Kevin is oxidizer being O2 instead of air is the cause?
-real FAR = ER * stoich_FAR;
-Wfuel = FAR * Fl_I.W;
-  
-// Set outputs and fluid properties
-Fl_O.Pt = Pt_out;
-Fl_O.W = Fl_I.W;
-Fu_O.W = Wfuel;
-dPqP = (Fl_O.Pt - Fl_I.Pt) / Fl_I.Pt;
-Fl_O.copyFlow("Fl_I");
-Fl_O.FAR = FAR;
-
-// Enthalpy
-real h_out = Fl_O.getTotal_h(Tt_out, FAR);  // Get enthalpy at Tt_out from new FAR. getTotal_h is an NPSS function buolt into the FluidOutputPort element.
-Fl_O.setTotal_hP(h_out, Fl_O.Pt);
-
-// Heat release
-real LHV = 18400.0;  // Use lower heating value for hatever RP-1 is
-eff = 1.0;     // Combustion efficiency
-Q_heat = Wfuel * LHV * eff;
-
-
+calculate() {
+    
+    // Copy inlet flow properties first
+    Fl_O.copyFlow("Fl_I");
+    Fl_O.W = Fl_I.W;
+    
+    //------------------------------------------------------------
+    // Apply pre-combustor duct pressure loss (if any)
+    //------------------------------------------------------------
+    real Pt_comb_inlet = Fl_I.Pt;  // Pressure entering combustion
+    
+    if (abs(dPqP_dmd) > 0.0001) {
+        real dPqPf = dPqP_dmd * s_dPqPf + a_dPqPf;
+        Pt_comb_inlet = Fl_I.Pt * (1.0 - dPqPf);
+    }
+    
+    //------------------------------------------------------------
+    // DESIGN vs OFF-DESIGN MODE HANDLING
+    //------------------------------------------------------------
+    
+    if (switchDes == "DESIGN") {
+        //====================================================
+        // DESIGN MODE
+        //====================================================
+        
+        // Determine fuel flow based on switchBurn mode
+        if (switchBurn == "FUEL") {
+            // Wfuel is already set from .mdl file (e.g., Wfuel = 0.35)
+            FAR = Wfuel / Fl_I.W;
+        }
+        else if (switchBurn == "FAR") {
+            // Calculate based on equivalence ratio
+            real ER = 0.862;  // equivalence ratio at design
+            real stoich_FAR = 0.293;  // ChatGPT thinks 0.293 is too high, maybe Kevin used O2 as oxidizer?
+            FAR = ER * stoich_FAR;
+            Wfuel = FAR * Fl_I.W;
+        }
+        else if (switchBurn == "WFUEL") {
+            Wfuel = Fu_I.W;
+            FAR = Wfuel / Fl_I.W;
+        }
+        
+        // Store design FAR
+        FARDes = FAR;
+        
+        // Look up RDE performance at design conditions
+        string result = interpolate_RDE_table(Fl_I.W, Pt_comb_inlet, Fl_I.Tt);
+        
+        // Parse result
+        int eq_pos = result.find("=");
+        string Pt_str = result.substr(0, eq_pos);
+        string Tt_str = result.substr(eq_pos + 1);
+        real Pt_out = toReal(Pt_str);
+        real Tt_out = toReal(Tt_str);
+        
+        // Set exit pressure from RDE table
+        Fl_O.Pt = Pt_out;
+        
+        // Calculate enthalpy at exit conditions
+        real h_out = Fl_O.getTotal_h(Tt_out, FAR);
+        Fl_O.setTotal_hP(h_out, Fl_O.Pt);
+        
+    } else {
+        //====================================================
+        // OFF-DESIGN MODE: Use RDE performance tables
+        //====================================================
+        
+        // Fuel flow control
+        if (switchBurn == "FUEL") {
+            // Wfuel is set by fuel controller or user
+            FAR = Wfuel / Fl_I.W;
+        }
+        else if (switchBurn == "FAR") {
+            // FAR is specified, calculate Wfuel
+            Wfuel = FAR * Fl_I.W;
+        }
+        else if (switchBurn == "WFUEL") {
+            Wfuel = Fu_I.W;
+            FAR = Wfuel / Fl_I.W;
+        }
+        
+        // Look up RDE performance at current operating conditions
+        string result = interpolate_RDE_table(Fl_I.W, Pt_comb_inlet, Fl_I.Tt);
+        
+        // Parse result
+        int eq_pos = result.find("=");
+        string Pt_str = result.substr(0, eq_pos);
+        string Tt_str = result.substr(eq_pos + 1);
+        real Pt_out = toReal(Pt_str);
+        real Tt_out = toReal(Tt_str);
+        
+        // Set exit conditions from table
+        Fl_O.Pt = Pt_out;
+        
+        // Calculate enthalpy at exit conditions with current FAR
+        real h_out = Fl_O.getTotal_h(Tt_out, FAR);
+        Fl_O.setTotal_hP(h_out, Fl_O.Pt);
+    }
+    
+    //------------------------------------------------------------
+    // AFTER DESIGN CASING
+    //------------------------------------------------------------
+    
+    // Set fuel output
+    Fu_O.W = Wfuel;
+    Fl_O.FAR = FAR;
+    
+    // Overall pressure ratio
+    dPqP = (Fl_O.Pt - Fl_I.Pt) / Fl_I.Pt;
+    
+    // Heat release calculation
+    real LHV = 18400.0;  // BTU/lbm for RP-1 I scrubed off google
+    eff = effBase * s_eff + a_eff;  // Use eff from base
+    Q_heat = Wfuel * LHV * eff;
 }
  
  
@@ -467,7 +546,7 @@ Q_heat = Wfuel * LHV * eff;
   string V000, V100, V010, V110, V001, V101, V011, V111;
   
 // Read CSV and find bounds/corner values
-	read_RDE_data_and_find_bounds(W, Pt, Tt, W_lower, W_upper, Pt_lower, Pt_upper,Tt_lower, Tt_upper, V000, V100, V010, V110, V001, V101, V011, V111);
+	read_RDE_data(W, Pt, Tt, W_lower, W_upper, Pt_lower, Pt_upper,Tt_lower, Tt_upper, V000, V100, V010, V110, V001, V101, V011, V111);
 // Interpolate and get result
 	string result = trilinear_interpolate(W, Pt, Tt, W_lower, W_upper, Pt_lower, Pt_upper, Tt_lower, Tt_upper, V000, V100, V010, V110, V001, V101, V011, V111);
   // Vertices dimensions are W,Pt,Tt
