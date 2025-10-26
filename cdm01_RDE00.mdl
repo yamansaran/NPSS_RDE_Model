@@ -210,9 +210,9 @@ Element BurnerRDE BrnPri {
 	effBase = 0.98;
 
 	switchHotLoss = "input";
-	switchBurn = "FUEL";
+	switchBurn = "FUEL"; //options are FUEL,FAR, WFUEL for fuel controller, fixed FAR, or upstream element // I think we should keep it at fuel because I don't understand how WFUEL's upstream element works
 	Wfuel = .35;
-	tolRayleigh = 0.0001;
+	tolRayleigh = 0.0001; // vestigial
 }
 
 // ------------------------------
@@ -408,4 +408,5 @@ Element FuelControl FuPriCtr {
 //-------------------------------------------------
 solver.debugLevel = "ITERATION_DETAILS";
 solver.diagnosticFile = "solver.diag";
+
 
