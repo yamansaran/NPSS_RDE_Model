@@ -201,9 +201,11 @@ Element FuelStart FusEng {
 }
 
 // ------------------------------
-//      Burner BrnPri
+//      Burner BrnPri			=================================================================================================================================================
 // ------------------------------
-Element Burner BrnPri {
+
+// Change Burner to BurnerRDE
+Element BurnerRDE BrnPri {
 	dPqP_dmd = 0.05;
 	effBase = 0.98;
 
@@ -406,3 +408,4 @@ Element FuelControl FuPriCtr {
 //-------------------------------------------------
 solver.debugLevel = "ITERATION_DETAILS";
 solver.diagnosticFile = "solver.diag";
+
