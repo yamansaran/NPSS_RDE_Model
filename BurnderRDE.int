@@ -422,7 +422,7 @@ background = "";
   
  
  calculate() {
-    string result = interpolate_RDE_table(Fl_I.W, Fl_I.Pt, Fl_I.Tt);
+	string result = interpolate_RDE_table(Fl_I.W, Fl_I.Pt, Fl_I.Tt);
 	//This recieves the input as a concatonated string, then separates it into Pt and Tt
 		int eq_pos = result.find("=");
 		string Pt_str = result.substr(0, eq_pos);
@@ -432,19 +432,30 @@ background = "";
 		Fl_O.Pt = Pt_out;
 		Fl_O.Tt = Tt_out;
 		
-   
-  real ER =0.862;  // equivalence ratio
-  real stoich_FAR = 0.293;  //This may be too large ask Kevin is oxidizer being O2 instead of air is the cause?
-  real FAR = ER * stoich_FAR;
-  Wfuel = FAR * Fl_I.W;
+// Fuel calculations
+real ER =0.862;  // equivalence ratio
+real stoich_FAR = 0.293;  //This may be too large ask Kevin is oxidizer being O2 instead of air is the cause?
+real FAR = ER * stoich_FAR;
+Wfuel = FAR * Fl_I.W;
   
-  // Set outputs and fluid properties
-  Fl_O.Pt = Pt_out;
-  Fl_O.W = Fl_I.W;
-  Fu_O.W = Wfuel;
-  Fl_O.copyFlow("Fl_I");
-  Fl_O.FAR = FAR;
-  Fl_O.setTotal_hP(<enthalpy>, Fl_O.Pt);
+// Set outputs and fluid properties
+Fl_O.Pt = Pt_out;
+Fl_O.W = Fl_I.W;
+Fu_O.W = Wfuel;
+dPqP = (Fl_O.Pt - Fl_I.Pt) / Fl_I.Pt;
+Fl_O.copyFlow("Fl_I");
+Fl_O.FAR = FAR;
+
+// Enthalpy
+real h_out = Fl_O.getTotal_h(Tt_out, FAR);  // Get enthalpy at Tt_out from new FAR. getTotal_h is an NPSS function buolt into the FluidOutputPort element.
+Fl_O.setTotal_hP(h_out, Fl_O.Pt);
+
+// Heat release
+real LHV = 18400.0;  // Use lower heating value for hatever RP-1 is
+eff = 1.0;     // Combustion efficiency
+Q_heat = Wfuel * LHV * eff;
+
+
 }
  
  
