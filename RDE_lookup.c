@@ -4,11 +4,11 @@
 
     enum {
         minPt = 0,
-        maxPt = 10,
+        maxPt = 3,
         minTt = 0,
-        maxTt = 300,
+        maxTt = 5,
         minWb = 0,
-        maxWb = 500
+        maxWb = 10
     };
 
     struct output {
@@ -35,12 +35,33 @@
 
     struct output matrix[maxPt - minPt + 1][maxTt - minTt + 1][maxWb - minWb + 1];
     void setUp() {
+        char line[256];
+        FILE *fp = fopen("STtest.csv", "r");
 
+        if(fp == NULL) {
+            printf("Error opening file\n");
+            return;
+        }
+        
+        while (fgets(line, sizeof(line), fp) != NULL) {
+            float Pt_in, Tt_in, Fuel_frac, mdot_out Pt_out, Tt_out;
+            int n = sscanf(line, "%f,%f,%f,%f,%f", &Pt_in, &Tt_in, &Fuel_frac, &mdot_out, &Pt_out, &Tt_out);
+            if (n != 5) {
+                printf("⚠️  Skipping malformed line: %s", line);
+                continue;
+            }
+            sscanf(line, "%f,%f,%f,%f,%f", &Pt_in, &Tt_in, &FuelFrac, &Pt_out, &Tt_out);
+            int i = (int)(Pt_in - minPt);
+            int j = (int)(Tt_in - minTt);
+            int k = (int)(Wb - minWb);
+            printf("i=%f, j=%f, k=%f, output = %f, %f\n", Pt_in, Tt_in, FuelFrac,  Pt_out, Tt_out);
+            matrix[i][j][k] = createOutput(Pt_out, Tt_out);
+        }
     }
 
     struct output testMatrix[3][3][3];
     void testSetUp() {   
-    //Intitialize matrix with          Pt    Tt  
+    //Intitialize matrix with             Pt    Tt  
     testMatrix[0][0][0] = (struct output){0.0, 0.0};
     testMatrix[0][1][0] = (struct output){0.0, 0.0};
     testMatrix[0][2][0] = (struct output){5.0, 6.0};
@@ -68,6 +89,8 @@ int main() {
     printf("\n Pt = %.1f, Tt = %.1f",
     testMatrix[1][2][0].Pt, testMatrix[1][2][0].Tt);
 
-
+    setUp();
+    printf("\n Pt = %.1f, Tt = %.1f",
+    matrix[1][2][0].Pt, matrix[1][2][0].Tt);
     return 0;
 }
