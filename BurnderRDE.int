@@ -26,6 +26,7 @@ fine, imprisonment, or both.
 
 #include <InterpIncludes.ncp>
 
+
 class Burner extends Element {
 
 //------------------------------------------------------------
@@ -616,6 +617,27 @@ void parse_string(string input, real &Pt_val, real &Tt_val) {
   Tt_val = toReal(Tt_str);
 }
 
+import "librde_data.so";
+void import_RDE_library() {
+    int nW = get_W_grid_length();
+    int nPt = get_Pt_grid_length();
+    int nTt = get_Tt_grid_length();
+
+    W_grid.resize(nW);
+    Pt_grid.resize(nPt);
+    Tt_grid.resize(nTt);
+    RDE_data.resize(nW, nPt, nTt);
+
+    for(int i=0; i<nW; i++) W_grid[i] = get_W(i);
+    for(int i=0; i<nPt; i++) Pt_grid[i] = get_Pt(i);
+    for(int i=0; i<nTt; i++) Tt_grid[i] = get_Tt(i);
+
+    for(int i=0; i<nW; i++)
+        for(int j=0; j<nPt; j++)
+            for(int k=0; k<nTt; k++)
+                RDE_data[i][j][k] = get_RDE_data(i,j,k);
+}
+
 void read_data(real W, real Pt, real Tt,
                                     real &W_lower, real &W_upper,
                                     real &Pt_lower, real &Pt_upper,
@@ -623,11 +645,14 @@ void read_data(real W, real Pt, real Tt,
                                     string &V000, string &V100, string &V010, string &V110,
                                     string &V001, string &V101, string &V011, string &V111) {
 	// TODO: reading csv file
+  
 
 	real[] W_grid;     // Array of all W values in the table
 	real[] Pt_grid;    // Array of all Pt values in the table
 	real[] Tt_grid;    // Array of all Tt values in the table
 	string[][][]  RDE_data;  // 3D array of "Pt=Tt" strings
+
+  
 
 	// Find W bounds
 	int i_W_lower = find_lower_index(W_grid, W);
