@@ -638,7 +638,7 @@ void import_RDE_library() {
                 RDE_data[i][j][k] = get_RDE_data(i,j,k);
 }
 
-void read_data(real W, real Pt, real Tt,
+void read_RDE_data(real W, real Pt, real Tt,
                                     real &W_lower, real &W_upper,
                                     real &Pt_lower, real &Pt_upper,
                                     real &Tt_lower, real &Tt_upper,
