@@ -1,96 +1,83 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include <string.h>
+    #include <math.h>
 
-    enum {
-        minPt = 0,
-        maxPt = 3,
-        minTt = 0,
-        maxTt = 5,
-        minWb = 0,
-        maxWb = 10
-    };
+    #define minPt 1000
+    #define maxPt 1008
+    #define minTt 540
+    #define maxTt 550
+    #define minFuelFrac 0.2
+    #define maxFuelFrac 0.25
+    #define fuelFracStep 0.025
+    #define maxLines 10000000
 
-    struct output {
-        float Pt;
-        float Tt;
-    };
 
-    struct output createOutput(float Pt, float Tt){
-        struct output out;
-        out.Pt = Pt;
-        out.Tt = Tt;
-        return out;
-    }
+    static char matrix[maxPt - minPt + 1][maxTt - minTt + 1][(int)((maxFuelFrac - minFuelFrac) / fuelFracStep) + 1][50];
+    static double Pt_grid[maxPt - minPt + 1],
+    Tt_grid[maxTt - minTt + 1],
+    W_grid[maxLines];
 
-    //parses matlabb output "Pt = Tt" and creates a struct
-    struct output split_matlab_output(char *matlab_output){
-        char *Pt, *Tt;
-        Pt = strtok(matlab_output, "=");
-        Tt = strtok(NULL, "=");
-        while (*Pt == ' ') Pt++;
-        while (*Tt == ' ') Tt++;
-        return createOutput(atof(Pt), atof(Tt));
-    }
-
-    struct output matrix[maxPt - minPt + 1][maxTt - minTt + 1][maxWb - minWb + 1];
+    int W_size = 0;
     void setUp() {
         char line[256];
-        FILE *fp = fopen("STtest.csv", "r");
+        FILE *fp = fopen("burner_lookup_table.csv", "r");
 
         if(fp == NULL) {
             printf("Error opening file\n");
             return;
         }
-        
+        int count = 0;
         while (fgets(line, sizeof(line), fp) != NULL) {
-            float Pt_in, Tt_in, Fuel_frac, mdot_out Pt_out, Tt_out;
-            int n = sscanf(line, "%f,%f,%f,%f,%f", &Pt_in, &Tt_in, &Fuel_frac, &mdot_out, &Pt_out, &Tt_out);
-            if (n != 5) {
+            float Pt_in, Tt_in, Fuel_frac, mdot_out, Pt_out, Tt_out;
+            int n = sscanf(line, "%f,%f,%f,%f,%f,%f", &Pt_in, &Tt_in, &Fuel_frac, &mdot_out, &Pt_out, &Tt_out);
+            if (n != 6) {
                 printf("⚠️  Skipping malformed line: %s", line);
                 continue;
             }
-            sscanf(line, "%f,%f,%f,%f,%f", &Pt_in, &Tt_in, &FuelFrac, &Pt_out, &Tt_out);
-            int i = (int)(Pt_in - minPt);
-            int j = (int)(Tt_in - minTt);
-            int k = (int)(Wb - minWb);
-            printf("i=%f, j=%f, k=%f, output = %f, %f\n", Pt_in, Tt_in, FuelFrac,  Pt_out, Tt_out);
-            matrix[i][j][k] = createOutput(Pt_out, Tt_out);
+            //printf("Read line: Pt_in=%.2f, Tt_in=%.2f, Fuel_frac=%.2f, mdot_out=%.2f, Pt_out=%.2f, Tt_out=%.2f\n",
+            //       Pt_in, Tt_in, Fuel_frac, mdot_out, Pt_out, Tt_out);
+            
+            char output[50];
+            sprintf(output, "%d=%d", (int)Pt_out, (int)Tt_out);
+            strcpy(matrix[(int)Pt_in - minPt][(int)Tt_in - minTt][(int)round(-(Fuel_frac - maxFuelFrac) / fuelFracStep)], output);
+            Pt_grid[count] = Pt_in;
+            Tt_grid[count] = Tt_in;
+            W_grid[count] = mdot_out;
+
+            //printf("Stored in matrix[%d][%d][%d]: %s\n",
+            //       (int)Pt_in - minPt, (int)Tt_in - minTt, (int)round(-(Fuel_frac - maxFuelFrac) / fuelFracStep), output);
+            //printf("Grids: Pt_grid[%d]=%.2f, Tt_grid[%d]=%.2f, W_grid[%d]=%.2f\n",
+            //       count, Pt_grid[count], count, Tt_grid[count], count, W_grid[count]);
+            count++;
         }
+        W_size = count;
+        fclose(fp);
+        printf("Finished reading file\n");
+    }
+    int get_W_grid_size() {
+        return W_size;
+    }
+    int get_Pt_grid_size() {
+        return maxPt - minPt + 1;
+    }
+    int get_Tt_grid_size() {
+        return maxTt - minTt + 1;
+    }
+    double get_W_grid(int index) {
+        return W_grid[index];
+    }
+    double get_Pt_grid(int index) {
+        return Pt_grid[index];
+    }
+    double get_Tt_grid(int index) {
+        return Tt_grid[index];
+    }
+    const char* get_RDE_data(int Pt_idx, int Tt_idx, int Fuel_frac_idx) {
+        return matrix[Pt_idx][Tt_idx][Fuel_frac_idx];
     }
 
-    struct output testMatrix[3][3][3];
-    void testSetUp() {   
-    //Intitialize matrix with             Pt    Tt  
-    testMatrix[0][0][0] = (struct output){0.0, 0.0};
-    testMatrix[0][1][0] = (struct output){0.0, 0.0};
-    testMatrix[0][2][0] = (struct output){5.0, 6.0};
-    
-    testMatrix[1][0][0] = (struct output){1.0, 2.0};
-    testMatrix[1][1][0] = (struct output){4.0, 5.0};
-    testMatrix[1][2][0] = (struct output){7.0, 8.0};
-    
-    testMatrix[2][0][0] = (struct output){10.0, 11.0};
-    testMatrix[2][1][0] = (struct output){13.0, 14.0};
-    testMatrix[2][2][0] = (struct output){16.0, 17.0};
-}
-
 int main() {
-    //testing matlab input (Pt = Tt)
-    char str[] = "100 = 200";
-
-    //tests the split function
-    struct output test = split_matlab_output(str);
-    printf("Pt = %.1f, Tt = %.1f",
-    test.Pt, test.Tt);
-
-    //tests the matrix setup
-    testSetUp();
-    printf("\n Pt = %.1f, Tt = %.1f",
-    testMatrix[1][2][0].Pt, testMatrix[1][2][0].Tt);
-
     setUp();
-    printf("\n Pt = %.1f, Tt = %.1f",
-    matrix[1][2][0].Pt, matrix[1][2][0].Tt);
     return 0;
 }
