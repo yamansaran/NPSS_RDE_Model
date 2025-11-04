@@ -617,133 +617,52 @@ void parse_string(string input, real &Pt_val, real &Tt_val) {
   Tt_val = toReal(Tt_str);
 }
 
+
+
 void read_RDE_data(real W, real Pt, real Tt,
-                                    real &W_lower, real &W_upper,
-                                    real &Pt_lower, real &Pt_upper,
-                                    real &Tt_lower, real &Tt_upper,
-                                    string &V000, string &V100, string &V010, string &V110,
-                                    string &V001, string &V101, string &V011, string &V111) {
-	// TODO: reading csv file
+                   real &W_lower, real &W_upper,
+                   real &Pt_lower, real &Pt_upper,
+                   real &Tt_lower, real &Tt_upper,
+                   string &V000, string &V100, string &V010, string &V110,
+                   string &V001, string &V101, string &V011, string &V111) {
   
-
-	real[] W_grid;     // Array of all W values in the table
-	real[] Pt_grid;    // Array of all Pt values in the table
-	real[] Tt_grid;    // Array of all Tt values in the table
-	string[][][]  RDE_data;  // 3D array of "Pt=Tt" strings
-
-  // importing RDE data
-  int nW = get_W_grid_length();
-  int nPt = get_Pt_grid_length();
-  int nTt = get_Tt_grid_length();
-
-  W_grid.resize(nW);
-  Pt_grid.resize(nPt);
-  Tt_grid.resize(nTt);
-  RDE_data.resize(nW, nPt, nTt);
-
-  for(int i=0; i<nW; i++) W_grid[i] = get_W(i);
-  for(int i=0; i<nPt; i++) Pt_grid[i] = get_Pt(i);
-  for(int i=0; i<nTt; i++) Tt_grid[i] = get_Tt(i);
-
-  for(int i=0; i<nW; i++)
-        for(int j=0; j<nPt; j++)
-            for(int k=0; k<nTt; k++)
-                RDE_data[i][j][k] = get_RDE_data(i,j,k);
-
+  real[] W_grid;     // Array of all W values in the table
+  real[] Pt_grid;    // Array of all Pt values in the table
+  real[] Tt_grid;    // Array of all Tt values in the table
+  string[][][] RDE_data;  // 3D array of "Pt=Tt" strings
   
-
-	// Find W bounds
-	int i_W_lower = find_lower_index(W_grid, W);
-	int i_W_upper = i_W_lower + 1;
-	W_lower = W_grid[i_W_lower];
-	W_upper = W_grid[i_W_upper];
-
-	 // Find Pt bounds
-	int i_Pt_lower = find_lower_index(Pt_grid, Pt);
-	int i_Pt_upper = i_Pt_lower + 1;
-	Pt_lower = Pt_grid[i_Pt_lower];
-	Pt_upper = Pt_grid[i_Pt_upper];
+  // Read CSV file to populate arrays
+  read_csv("RDE_performance_data.csv", W_grid, Pt_grid, Tt_grid, RDE_data);
   
-	// Find Tt bounds
-	int i_Tt_lower = find_lower_index(Tt_grid, Tt);
-	int i_Tt_upper = i_Tt_lower + 1;
-	Tt_lower = Tt_grid[i_Tt_lower];
-	Tt_upper = Tt_grid[i_Tt_upper];
+  // Find W bounds
+  int i_W_lower = find_lower_index(W_grid, W);
+  int i_W_upper = i_W_lower + 1;
+  W_lower = W_grid[i_W_lower];
+  W_upper = W_grid[i_W_upper];
 
-	V000 = RDE_data[i_W_lower][i_Pt_lower][i_Tt_lower];
-	V100 = RDE_data[i_W_upper][i_Pt_lower][i_Tt_lower];
-	V010 = RDE_data[i_W_lower][i_Pt_upper][i_Tt_lower];
-	V110 = RDE_data[i_W_upper][i_Pt_upper][i_Tt_lower];
-	V001 = RDE_data[i_W_lower][i_Pt_lower][i_Tt_upper];
-	V101 = RDE_data[i_W_upper][i_Pt_lower][i_Tt_upper];
-	V011 = RDE_data[i_W_lower][i_Pt_upper][i_Tt_upper];
-	V111 = RDE_data[i_W_upper][i_Pt_upper][i_Tt_upper];
+  // Find Pt bounds
+  int i_Pt_lower = find_lower_index(Pt_grid, Pt);
+  int i_Pt_upper = i_Pt_lower + 1;
+  Pt_lower = Pt_grid[i_Pt_lower];
+  Pt_upper = Pt_grid[i_Pt_upper];
+  
+  // Find Tt bounds
+  int i_Tt_lower = find_lower_index(Tt_grid, Tt);
+  int i_Tt_upper = i_Tt_lower + 1;
+  Tt_lower = Tt_grid[i_Tt_lower];
+  Tt_upper = Tt_grid[i_Tt_upper];
 
+  V000 = RDE_data[i_W_lower][i_Pt_lower][i_Tt_lower];
+  V100 = RDE_data[i_W_upper][i_Pt_lower][i_Tt_lower];
+  V010 = RDE_data[i_W_lower][i_Pt_upper][i_Tt_lower];
+  V110 = RDE_data[i_W_upper][i_Pt_upper][i_Tt_lower];
+  V001 = RDE_data[i_W_lower][i_Pt_lower][i_Tt_upper];
+  V101 = RDE_data[i_W_upper][i_Pt_lower][i_Tt_upper];
+  V011 = RDE_data[i_W_lower][i_Pt_upper][i_Tt_upper];
+  V111 = RDE_data[i_W_upper][i_Pt_upper][i_Tt_upper];
 }
 
 // Helper function: Find the index of the largest grid value that's <= query value
-  #define minPt 1000
-  #define maxPt 1008
-  #define minTt 540
-  #define maxTt 550
-  #define minFuelFrac 0.2
-  #define maxFuelFrac 0.25
-  #define fuelFracStep 0.025
-  #define maxLines 10000000
-  static char matrix[maxPt - minPt + 1][maxTt - minTt + 1][(int)((maxFuelFrac - minFuelFrac) / fuelFracStep) + 1][50];
-  static double Pt_grid[maxPt - minPt + 1],
-  Tt_grid[maxTt - minTt + 1],
-  W_grid[maxLines];
-  int W_size = 0;
-  void setUp() {
-      char line[256];
-      FILE *fp = fopen("burner_lookup_table.csv", "r");
-
-      if(fp == NULL) {
-          printf("Error opening file\n");
-          return;
-      }
-      int count = 0;
-      while (fgets(line, sizeof(line), fp) != NULL) {
-          float Pt_in, Tt_in, Fuel_frac, mdot_out, Pt_out, Tt_out;
-          int n = sscanf(line, "%f,%f,%f,%f,%f,%f", &Pt_in, &Tt_in, &Fuel_frac, &mdot_out, &Pt_out, &Tt_out);
-          if (n != 6) {
-              printf("Skipping malformed line: %s", line);
-              continue;
-          }          
-          char output[50];
-          sprintf(output, "%d=%d", (int)Pt_out, (int)Tt_out);
-          strcpy(matrix[(int)Pt_in - minPt][(int)Tt_in - minTt][(int)round(-(Fuel_frac - maxFuelFrac) / fuelFracStep)], output);
-          Pt_grid[count] = Pt_in;
-          Tt_grid[count] = Tt_in;
-          W_grid[count] = mdot_out;
-          count++;
-      }
-      W_size = count;
-      fclose(fp);
-      printf("Finished reading file\n");
-  }
-  int get_W_grid_size() {
-      return W_size;
-  }
-  int get_Pt_grid_size() {
-      return maxPt - minPt + 1;
-  }
-  int get_Tt_grid_size() {
-      return maxTt - minTt + 1;
-  }
-  double get_W_grid(int index) {
-      return W_grid[index];
-  }
-  double get_Pt_grid(int index) {
-      return Pt_grid[index];
-  }
-  double get_Tt_grid(int index) {
-      return Tt_grid[index];
-  }
-  const char* get_RDE_data(int Pt_idx, int Tt_idx, int Fuel_frac_idx) {
-      return matrix[Pt_idx][Tt_idx][Fuel_frac_idx];
-  }
 int find_lower_index(real[] grid, real query_value) {
   // Binary search or linear search through grid array
   // Return i so that: grid[i] <= query_value < grid[i+1]
@@ -756,6 +675,99 @@ int find_lower_index(real[] grid, real query_value) {
   
   // Edge case: if query is beyond the table, clamp to last valid index
   return grid.entries() - 2;  // Return second-to-last index
+}
+void read_csv(string filename, 
+              real[] &W_grid, 
+              real[] &Pt_grid, 
+              real[] &Tt_grid, 
+              string[][][] &RDE_data) {
+  
+  // Open the CSV file for reading
+  InFileStream csv;
+  csv.open(filename);
+  
+  if (!csv.isOpen()) {
+    cerr << "ERROR: Cannot open RDE data file: " << filename << endl;
+    return;
+  }
+  
+  // Read the first line to get grid dimensions
+  string line;
+  csv.getline(line);
+  
+  // Parse dimensions: nW, nPt, nTt (assuming first line contains these)
+  // Format expected: nW,nPt,nTt
+  int comma1 = line.find(",");
+  int comma2 = line.find(",", comma1 + 1);
+  
+  int nW = toInt(line.substr(0, comma1));
+  int nPt = toInt(line.substr(comma1 + 1, comma2 - comma1 - 1));
+  int nTt = toInt(line.substr(comma2 + 1));
+  
+  // Resize arrays
+  W_grid.resize(nW);
+  Pt_grid.resize(nPt);
+  Tt_grid.resize(nTt);
+  RDE_data.resize(nW, nPt, nTt);
+  
+  // Read W_grid values
+  csv.getline(line);
+  int start = 0;
+  for (int i = 0; i < nW; i++) {
+    int comma_pos = line.find(",", start);
+    if (comma_pos == -1) comma_pos = line.length();
+    W_grid[i] = toReal(line.substr(start, comma_pos - start));
+    start = comma_pos + 1;
+  }
+  
+  // Read Pt_grid values
+  csv.getline(line);
+  start = 0;
+  for (int i = 0; i < nPt; i++) {
+    int comma_pos = line.find(",", start);
+    if (comma_pos == -1) comma_pos = line.length();
+    Pt_grid[i] = toReal(line.substr(start, comma_pos - start));
+    start = comma_pos + 1;
+  }
+  
+  // Read Tt_grid values
+  csv.getline(line);
+  start = 0;
+  for (int i = 0; i < nTt; i++) {
+    int comma_pos = line.find(",", start);
+    if (comma_pos == -1) comma_pos = line.length();
+    Tt_grid[i] = toReal(line.substr(start, comma_pos - start));
+    start = comma_pos + 1;
+  }
+  
+  // Read RDE_data (Pt=Tt pairs)
+  // Each line contains data for one combination of i,j,k
+  for (int i = 0; i < nW; i++) {
+    for (int j = 0; j < nPt; j++) {
+      for (int k = 0; k < nTt; k++) {
+        csv.getline(line);
+        // Format expected: i,j,k,Pt_out=Tt_out
+        
+        // Find the last comma (before Pt_out=Tt_out)
+        int last_comma = -1;
+        int comma_count = 0;
+        for (int pos = 0; pos < line.length(); pos++) {
+          if (line[pos] == ',') {
+            comma_count++;
+            if (comma_count == 3) {
+              last_comma = pos;
+              break;
+            }
+          }
+        }
+        
+        // Extract the "Pt_out=Tt_out" string
+        RDE_data[i][j][k] = line.substr(last_comma + 1);
+      }
+    }
+  }
+  
+  csv.close();
 }
  
  
