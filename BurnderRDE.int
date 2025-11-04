@@ -617,7 +617,115 @@ void parse_string(string input, real &Pt_val, real &Tt_val) {
   Tt_val = toReal(Tt_str);
 }
 
+void read_csv(string filename, 
+              real[] &W_grid, 
+              real[] &Pt_grid, 
+              real[] &Tt_grid, 
+              string[][][] &RDE_data) {
+  
+  // Open the CSV file for reading
+  InFileStream csv;
+  csv.open(filename);
+  
+  if (!csv.isOpen()) {
+    cerr << "ERROR: Cannot open RDE data file: " << filename << endl;
+    return;
+  }
+  
+  // Temporary storage for all data points
+  real[] W_all;
+  real[] Pt_all;
+  real[] Tt_all;
+  string[] data_all;
+  
+  // Read all lines from CSV
+  string line;
+  int count = 0;
+  while (csv.getline(line)) {
+    if (line.length() == 0) continue; // Skip empty lines
+    
+    // Parse: W,Pt,Tt,Pt_out=Tt_out
+    int comma1 = line.find(",");
+    int comma2 = line.find(",", comma1 + 1);
+    int comma3 = line.find(",", comma2 + 1);
+    
+    real W_val = toReal(line.substr(0, comma1));
+    real Pt_val = toReal(line.substr(comma1 + 1, comma2 - comma1 - 1));
+    real Tt_val = toReal(line.substr(comma2 + 1, comma3 - comma2 - 1));
+    string data_str = line.substr(comma3 + 1);
+    
+    W_all.append(W_val);
+    Pt_all.append(Pt_val);
+    Tt_all.append(Tt_val);
+    data_all.append(data_str);
+    count++;
+  }
+  
+  csv.close();
+  
+  // Extract unique sorted values for each dimension
+  W_grid = get_unique_sorted(W_all);
+  Pt_grid = get_unique_sorted(Pt_all);
+  Tt_grid = get_unique_sorted(Tt_all);
+  
+  int nW = W_grid.entries();
+  int nPt = Pt_grid.entries();
+  int nTt = Tt_grid.entries();
+  
+  // Resize 3D array
+  RDE_data.resize(nW, nPt, nTt);
+  
+  // Populate 3D array
+  for (int idx = 0; idx < count; idx++) {
+    // Find indices for this data point
+    int i = find_index(W_grid, W_all[idx]);
+    int j = find_index(Pt_grid, Pt_all[idx]);
+    int k = find_index(Tt_grid, Tt_all[idx]);
+    
+    RDE_data[i][j][k] = data_all[idx];
+  }
+}
 
+// Helper function to get unique sorted values from an array
+real[] get_unique_sorted(real[] arr) {
+  real[] unique;
+  
+  for (int i = 0; i < arr.entries(); i++) {
+    int found = FALSE;
+    for (int j = 0; j < unique.entries(); j++) {
+      if (abs(arr[i] - unique[j]) < 0.0001) {
+        found = TRUE;
+        break;
+      }
+    }
+    if (!found) {
+      unique.append(arr[i]);
+    }
+  }
+  
+  // Simple bubble sort
+  for (int i = 0; i < unique.entries() - 1; i++) {
+    for (int j = 0; j < unique.entries() - i - 1; j++) {
+      if (unique[j] > unique[j+1]) {
+        real temp = unique[j];
+        unique[j] = unique[j+1];
+        unique[j+1] = temp;
+      }
+    }
+  }
+  
+  return unique;
+}
+
+// Helper function to find exact index of a value in an array
+int find_index(real[] grid, real value) {
+  for (int i = 0; i < grid.entries(); i++) {
+    if (abs(grid[i] - value) < 0.0001) {
+      return i;
+    }
+  }
+  return 0; // Default to first index if not found
+}
 
 void read_RDE_data(real W, real Pt, real Tt,
                    real &W_lower, real &W_upper,
@@ -676,99 +784,7 @@ int find_lower_index(real[] grid, real query_value) {
   // Edge case: if query is beyond the table, clamp to last valid index
   return grid.entries() - 2;  // Return second-to-last index
 }
-void read_csv(string filename, 
-              real[] &W_grid, 
-              real[] &Pt_grid, 
-              real[] &Tt_grid, 
-              string[][][] &RDE_data) {
-  
-  // Open the CSV file for reading
-  InFileStream csv;
-  csv.open(filename);
-  
-  if (!csv.isOpen()) {
-    cerr << "ERROR: Cannot open RDE data file: " << filename << endl;
-    return;
-  }
-  
-  // Read the first line to get grid dimensions
-  string line;
-  csv.getline(line);
-  
-  // Parse dimensions: nW, nPt, nTt (assuming first line contains these)
-  // Format expected: nW,nPt,nTt
-  int comma1 = line.find(",");
-  int comma2 = line.find(",", comma1 + 1);
-  
-  int nW = toInt(line.substr(0, comma1));
-  int nPt = toInt(line.substr(comma1 + 1, comma2 - comma1 - 1));
-  int nTt = toInt(line.substr(comma2 + 1));
-  
-  // Resize arrays
-  W_grid.resize(nW);
-  Pt_grid.resize(nPt);
-  Tt_grid.resize(nTt);
-  RDE_data.resize(nW, nPt, nTt);
-  
-  // Read W_grid values
-  csv.getline(line);
-  int start = 0;
-  for (int i = 0; i < nW; i++) {
-    int comma_pos = line.find(",", start);
-    if (comma_pos == -1) comma_pos = line.length();
-    W_grid[i] = toReal(line.substr(start, comma_pos - start));
-    start = comma_pos + 1;
-  }
-  
-  // Read Pt_grid values
-  csv.getline(line);
-  start = 0;
-  for (int i = 0; i < nPt; i++) {
-    int comma_pos = line.find(",", start);
-    if (comma_pos == -1) comma_pos = line.length();
-    Pt_grid[i] = toReal(line.substr(start, comma_pos - start));
-    start = comma_pos + 1;
-  }
-  
-  // Read Tt_grid values
-  csv.getline(line);
-  start = 0;
-  for (int i = 0; i < nTt; i++) {
-    int comma_pos = line.find(",", start);
-    if (comma_pos == -1) comma_pos = line.length();
-    Tt_grid[i] = toReal(line.substr(start, comma_pos - start));
-    start = comma_pos + 1;
-  }
-  
-  // Read RDE_data (Pt=Tt pairs)
-  // Each line contains data for one combination of i,j,k
-  for (int i = 0; i < nW; i++) {
-    for (int j = 0; j < nPt; j++) {
-      for (int k = 0; k < nTt; k++) {
-        csv.getline(line);
-        // Format expected: i,j,k,Pt_out=Tt_out
-        
-        // Find the last comma (before Pt_out=Tt_out)
-        int last_comma = -1;
-        int comma_count = 0;
-        for (int pos = 0; pos < line.length(); pos++) {
-          if (line[pos] == ',') {
-            comma_count++;
-            if (comma_count == 3) {
-              last_comma = pos;
-              break;
-            }
-          }
-        }
-        
-        // Extract the "Pt_out=Tt_out" string
-        RDE_data[i][j][k] = line.substr(last_comma + 1);
-      }
-    }
-  }
-  
-  csv.close();
-}
+
  
  
  // Table output
