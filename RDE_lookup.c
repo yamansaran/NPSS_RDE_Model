@@ -15,8 +15,8 @@
 
     static char matrix[maxPt - minPt + 1][maxTt - minTt + 1][(int)((maxFuelFrac - minFuelFrac) / fuelFracStep) + 1][50];
     static double Pt_grid[maxPt - minPt + 1],
-           Tt_grid[maxTt - minTt + 1],
-           W_grid[maxLines];
+    Tt_grid[maxTt - minTt + 1],
+    W_grid[maxLines];
 
     int W_size = 0;
     void setUp() {

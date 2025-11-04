@@ -652,6 +652,25 @@ void read_data(real W, real Pt, real Tt,
 	real[] Tt_grid;    // Array of all Tt values in the table
 	string[][][]  RDE_data;  // 3D array of "Pt=Tt" strings
 
+  // importing RDE data
+  int nW = get_W_grid_length();
+  int nPt = get_Pt_grid_length();
+  int nTt = get_Tt_grid_length();
+
+  W_grid.resize(nW);
+  Pt_grid.resize(nPt);
+  Tt_grid.resize(nTt);
+  RDE_data.resize(nW, nPt, nTt);
+
+  for(int i=0; i<nW; i++) W_grid[i] = get_W(i);
+  for(int i=0; i<nPt; i++) Pt_grid[i] = get_Pt(i);
+  for(int i=0; i<nTt; i++) Tt_grid[i] = get_Tt(i);
+
+  for(int i=0; i<nW; i++)
+        for(int j=0; j<nPt; j++)
+            for(int k=0; k<nTt; k++)
+                RDE_data[i][j][k] = get_RDE_data(i,j,k);
+
   
 
 	// Find W bounds
