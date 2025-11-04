@@ -1,0 +1,47 @@
+%% Script for creating the lookup table for NPSS Burner Element
+
+clear;
+addpath('subroutines');
+
+% Input 
+pressure = 7:1:140;     % flow pressure in psia going into the burner
+temperature = 360:1:540;    % flow temp in Rankine going into the burner
+ofr = 4:0.5:5;              % oxidizer to fuel ratio going into the burner
+
+% Preallocate array for results
+rows = numel(pressure) * numel(temperature) * numel(ofr);
+results = zeros(rows, 6); % [p_in, T_in, f, w_dot_out, P_out, T_out]
+
+count = 1;
+for i = 1:length(pressure)
+    for j = 1:length(temperature)
+        for k = 1:length(ofr)
+            % --- Run the analysis for each condition ---
+            [opts, gbl] = detonation_nation_inputs(pressure(i), temperature(j), ofr(k));  
+            [gbl, cycle_data, ceaouts] = BDOWN_Main_Function(opts, gbl);
+
+            % --- Compute fuel fraction ---
+            f = 1 / ofr(k);
+
+            % --- Store results ---
+            results(count, :) = [ ...
+                pressure(i), ...    % input pressure
+                temperature(j), ...  % input temperature
+                f, ...               % fuel fraction
+                gbl.w_dot1, ...      % output mass flow rate
+                gbl.P_mav, ...       % output pressure
+                gbl.T_mav];          % output temperature
+
+            count = count + 1;
+        end
+    end
+end
+
+% --- Create table with descriptive headers ---
+T = array2table(results, ...
+    'VariableNames', {'InputPressure_psia', 'InputTemperature_R', 'FuelFraction', ...
+                      'OutputMassFlow', 'OutputPressure', 'OutputTemperature'});
+
+% --- Export to CSV ---
+filename = 'burner_lookup_table.csv';
+% writetable(T, filename);
