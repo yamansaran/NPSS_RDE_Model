@@ -258,6 +258,164 @@ background = "";
     value = 0;  IOstatus = "output";
     description = "If true, Rayleigh loop results in supersonic flow";
   }
+  real Pt_comb_inlet {
+  value = 0.0;  IOstatus = "output";  units = "psia";
+  description = "Pressure entering combustion section";
+}
+real ER {
+  value = 0.862;  IOstatus = "input";  units = "none";
+  description = "Equivalence ratio at design";
+}
+real stoich_FAR {
+  value = 0.293;  IOstatus = "input";  units = "none";
+  description = "Stoichiometric fuel-to-air ratio";
+}
+real LHV {
+  value = 18400.0;  IOstatus = "input";  units = "Btu/lbm";
+  description = "Lower heating value of fuel";
+}
+real Q_heat {
+  value = 0.0;  IOstatus = "output";  units = "Btu/sec";
+  description = "Heat release";
+}
+string result {
+  value = "";  IOstatus = "output";
+  description = "Interpolation result string";
+}
+int eq_pos {
+  value = 0;  IOstatus = "output";
+  description = "Position of equals sign in result string";
+}
+string Pt_str {
+  value = "";  IOstatus = "output";
+  description = "Pressure string from result";
+}
+string Tt_str {
+  value = "";  IOstatus = "output";
+  description = "Temperature string from result";
+}
+real Pt_out {
+  value = 0.0;  IOstatus = "output";  units = "psia";
+  description = "Output pressure from table";
+}
+real Tt_out {
+  value = 0.0;  IOstatus = "output";  units = "R";
+  description = "Output temperature from table";
+}
+real h_out {
+  value = 0.0;  IOstatus = "output";  units = "Btu/lbm";
+  description = "Output enthalpy";
+}
+int temp_eq_pos {
+  value = 0; IOstatus = "output";
+  description = "Temporary equals position";
+}
+string temp_Pt_str {
+  value = ""; IOstatus = "output";
+  description = "Temporary Pt string";
+}
+string temp_Tt_str {
+  value = ""; IOstatus = "output";
+  description = "Temporary Tt string";
+}
+real temp_Pt_val {
+  value = 0.0; IOstatus = "output"; units = "psia";
+  description = "Temporary Pt value";
+}
+real temp_Tt_val {
+  value = 0.0; IOstatus = "output"; units = "R";
+  description = "Temporary Tt value";
+}
+real[] W_grid {
+  description = "W grid values from CSV";
+}
+real[] Pt_grid {
+  description = "Pt grid values from CSV";
+}
+real[] Tt_grid {
+  description = "Tt grid values from CSV";
+}
+string[] RDE_data {
+  description = "RDE performance data - stored as 1D array";
+}
+int nW_size {
+  value = 0; IOstatus = "output";
+  description = "Number of W grid points";
+}
+int nPt_size {
+  value = 0; IOstatus = "output";
+  description = "Number of Pt grid points";
+}
+int nTt_size {
+  value = 0; IOstatus = "output";
+  description = "Number of Tt grid points";
+}
+
+// Interpolation bounds
+real W_lower_bound {
+  value = 0.0; IOstatus = "output"; units = "lbm/sec";
+  description = "Lower W bound";
+}
+real W_upper_bound {
+  value = 0.0; IOstatus = "output"; units = "lbm/sec";
+  description = "Upper W bound";
+}
+real Pt_lower_bound {
+  value = 0.0; IOstatus = "output"; units = "psia";
+  description = "Lower Pt bound";
+}
+real Pt_upper_bound {
+  value = 0.0; IOstatus = "output"; units = "psia";
+  description = "Upper Pt bound";
+}
+real Tt_lower_bound {
+  value = 0.0; IOstatus = "output"; units = "R";
+  description = "Lower Tt bound";
+}
+real Tt_upper_bound {
+  value = 0.0; IOstatus = "output"; units = "R";
+  description = "Upper Tt bound";
+}
+string V000_val { value = ""; IOstatus = "output"; description = "Vertex 000"; }
+string V100_val { value = ""; IOstatus = "output"; description = "Vertex 100"; }
+string V010_val { value = ""; IOstatus = "output"; description = "Vertex 010"; }
+string V110_val { value = ""; IOstatus = "output"; description = "Vertex 110"; }
+string V001_val { value = ""; IOstatus = "output"; description = "Vertex 001"; }
+string V101_val { value = ""; IOstatus = "output"; description = "Vertex 101"; }
+string V011_val { value = ""; IOstatus = "output"; description = "Vertex 011"; }
+string V111_val { value = ""; IOstatus = "output"; description = "Vertex 111"; }
+
+int csv_loaded {
+  value = 0; IOstatus = "output";
+  description = "Flag indicating CSV has been loaded";
+}
+
+// Temporary variables for parsing
+
+
+// Variables for trilinear interpolation
+real Pt000 { value = 0.0; IOstatus = "output"; units = "psia"; description = "Vertex 000 Pt"; }
+real Tt000 { value = 0.0; IOstatus = "output"; units = "R"; description = "Vertex 000 Tt"; }
+real Pt100 { value = 0.0; IOstatus = "output"; units = "psia"; description = "Vertex 100 Pt"; }
+real Tt100 { value = 0.0; IOstatus = "output"; units = "R"; description = "Vertex 100 Tt"; }
+real Pt010 { value = 0.0; IOstatus = "output"; units = "psia"; description = "Vertex 010 Pt"; }
+real Tt010 { value = 0.0; IOstatus = "output"; units = "R"; description = "Vertex 010 Tt"; }
+real Pt110 { value = 0.0; IOstatus = "output"; units = "psia"; description = "Vertex 110 Pt"; }
+real Tt110 { value = 0.0; IOstatus = "output"; units = "R"; description = "Vertex 110 Tt"; }
+real Pt001 { value = 0.0; IOstatus = "output"; units = "psia"; description = "Vertex 001 Pt"; }
+real Tt001 { value = 0.0; IOstatus = "output"; units = "R"; description = "Vertex 001 Tt"; }
+real Pt101 { value = 0.0; IOstatus = "output"; units = "psia"; description = "Vertex 101 Pt"; }
+real Tt101 { value = 0.0; IOstatus = "output"; units = "R"; description = "Vertex 101 Tt"; }
+real Pt011 { value = 0.0; IOstatus = "output"; units = "psia"; description = "Vertex 011 Pt"; }
+real Tt011 { value = 0.0; IOstatus = "output"; units = "R"; description = "Vertex 011 Tt"; }
+real Pt111 { value = 0.0; IOstatus = "output"; units = "psia"; description = "Vertex 111 Pt"; }
+real Tt111 { value = 0.0; IOstatus = "output"; units = "R"; description = "Vertex 111 Tt"; }
+
+real w_d { value = 0.0; IOstatus = "output"; units = "none"; description = "W interpolation weight"; }
+real p_d { value = 0.0; IOstatus = "output"; units = "none"; description = "Pt interpolation weight"; }
+real t_d { value = 0.0; IOstatus = "output"; units = "none"; description = "Tt interpolation weight"; }
+real Pt_interp { value = 0.0; IOstatus = "output"; units = "psia"; description = "Interpolated Pt"; }
+real Tt_interp { value = 0.0; IOstatus = "output"; units = "R"; description = "Interpolated Tt"; }
 
   //------------------------------------------------------------
   //   ******* OPTION VARIABLE SETUP *******
@@ -310,6 +468,9 @@ background = "";
   FuelInputPort Fu_I {
     description = "Incoming fuel flow";
   }
+  FuelOutputPort Fu_O {
+  description = "Exiting fuel flow";
+}
   
   // BLEED PORTS
   
@@ -422,7 +583,7 @@ background = "";
   
   
  
-calculate() {
+ void calculate() {
     
     // Copy inlet flow properties first
     Fl_O.copyFlow("Fl_I");
@@ -431,12 +592,10 @@ calculate() {
     //------------------------------------------------------------
     // Apply pre-combustor duct pressure loss (if any)
     //------------------------------------------------------------
-    real Pt_comb_inlet = Fl_I.Pt;  // Pressure entering combustion
-	//TODO: are we including duct losses in the table? If so, delete this
-	//Pt_comb_inlet = Fl_I.Pt * (1.0 - dPqP_dmd);
+    Pt_comb_inlet = Fl_I.Pt;  // Remove 'real' keyword
     
     if (abs(dPqP_dmd) > 0.0001) {
-        real dPqPf = dPqP_dmd * s_dPqPf + a_dPqPf; // dmd is duct loss, next are scalar p loss and p loss adder. I do not know what those are but the original model had them so I'm keeping them
+        dPqPf = dPqP_dmd * s_dPqPf + a_dPqPf;  // Remove 'real' keyword
         Pt_comb_inlet = Fl_I.Pt * (1.0 - dPqPf);
     }
     
@@ -451,75 +610,62 @@ calculate() {
         
         // Determine fuel flow based on switchBurn mode
         if (switchBurn == "FUEL") {
-            // Wfuel is already set from .mdl file (e.g., Wfuel = 0.35)
             FAR = Wfuel / Fl_I.W;
         }
-        else if (switchBurn == "FAR") { // using FAR as known design point
-            // Calculate based on equivalence ratio
-            real ER = 0.862;  // equivalence ratio at design
-            real stoich_FAR = 0.293;  // ChatGPT thinks 0.293 is too high, maybe Kevin used O2 as oxidizer?
+        else if (switchBurn == "FAR") {
+            // ER and stoich_FAR are now class variables
             FAR = ER * stoich_FAR;
             Wfuel = FAR * Fl_I.W;
         }
-        else if (switchBurn == "WFUEL") { // when fuel flow is dictated by FuelStart element from previous point in model
+        else if (switchBurn == "WFUEL") {
             Wfuel = Fu_I.W;
             FAR = Wfuel / Fl_I.W;
         }
         
-        // Store design FAR
         FARDes = FAR;
         
-        // Look up RDE performance at design conditions
-        string result = interpolate_RDE_table(Fl_I.W, Pt_comb_inlet, Fl_I.Tt);
+        // result is now a class variable
+        result = interpolate_RDE_table(Fl_I.W, Pt_comb_inlet, Fl_I.Tt);
         
-        // Parse result
-        int eq_pos = result.find("=");
-        string Pt_str = result.substr(0, eq_pos);
-        string Tt_str = result.substr(eq_pos + 1);
-        real Pt_out = toReal(Pt_str);
-        real Tt_out = toReal(Tt_str);
+        // Parse result - these are now class variables
+        eq_pos = result.find("=");
+        Pt_str = result.substr(0, eq_pos);
+        Tt_str = result.substr(eq_pos + 1);
+        Pt_out = toReal(Pt_str);
+        Tt_out = toReal(Tt_str);
         
-        // Set exit pressure from RDE table
         Fl_O.Pt = Pt_out;
         
-        // Calculate enthalpy at exit conditions
-        real h_out = Fl_O.getTotal_h(Tt_out, FAR);
+        h_out = Fl_O.getTotal_h(Tt_out, FAR);
         Fl_O.setTotal_hP(h_out, Fl_O.Pt);
         
     } else {
         //====================================================
-        // OFF-DESIGN MODE: Use RDE performance tables
+        // OFF-DESIGN MODE
         //====================================================
         
-        // Fuel flow control
-        if (switchBurn == "FUEL") { //Fuel controller controls fuel flow
-            // Wfuel is set by fuel controller or user
+        if (switchBurn == "FUEL") {
             FAR = Wfuel / Fl_I.W;
         }
-        else if (switchBurn == "FAR") { //we choose our own FAR that is maintained
-            // FAR is specified, calculate Wfuel
+        else if (switchBurn == "FAR") {
             Wfuel = FAR * Fl_I.W;
         }
-        else if (switchBurn == "WFUEL") { // when fuel flow is dictated by FuelStart element from previous point in model
+        else if (switchBurn == "WFUEL") {
             Wfuel = Fu_I.W;
             FAR = Wfuel / Fl_I.W;
         }
         
-        // Look up RDE performance at current operating conditions
-        string result = interpolate_RDE_table(Fl_I.W, Pt_comb_inlet, Fl_I.Tt);
+        result = interpolate_RDE_table(Fl_I.W, Pt_comb_inlet, Fl_I.Tt);
         
-        // Parse result
-        int eq_pos = result.find("=");
-        string Pt_str = result.substr(0, eq_pos);
-        string Tt_str = result.substr(eq_pos + 1);
-        real Pt_out = toReal(Pt_str);
-        real Tt_out = toReal(Tt_str);
+        eq_pos = result.find("=");
+        Pt_str = result.substr(0, eq_pos);
+        Tt_str = result.substr(eq_pos + 1);
+        Pt_out = toReal(Pt_str);
+        Tt_out = toReal(Tt_str);
         
-        // Set exit conditions from table
         Fl_O.Pt = Pt_out;
         
-        // Calculate enthalpy at exit conditions with current FAR
-        real h_out = Fl_O.getTotal_h(Tt_out, FAR);
+        h_out = Fl_O.getTotal_h(Tt_out, FAR);
         Fl_O.setTotal_hP(h_out, Fl_O.Pt);
     }
     
@@ -527,32 +673,28 @@ calculate() {
     // AFTER DESIGN CASING
     //------------------------------------------------------------
     
-    // Set fuel output
     Fu_O.W = Wfuel;
     Fl_O.FAR = FAR;
     
-    // Overall pressure ratio
     dPqP = (Fl_O.Pt - Fl_I.Pt) / Fl_I.Pt;
     
-    // Heat release calculation
-    real LHV = 18400.0;  // BTU/lbm for RP-1 I scrubed off google
-    eff = effBase * s_eff + a_eff;  // Use eff from base
+    eff = effBase * s_eff + a_eff;
     Q_heat = Wfuel * LHV * eff;
 }
  
  
- real interpolate_RDE_table(real W, real Pt, real Tt) {
-  // Read csv get 8 output pairs in the "pT=Tt" format following trilinear vertices naming convention
-  real W_lower, W_upper;
-  real Pt_lower, Pt_upper;
-  real Tt_lower, Tt_upper;
-  string V000, V100, V010, V110, V001, V101, V011, V111;
+ string interpolate_RDE_table(real W, real Pt, real Tt) {
+  // Read CSV and find bounds/corner values
+  read_RDE_data(W, Pt, Tt);
   
-// Read CSV and find bounds/corner values
-	read_RDE_data(W, Pt, Tt, W_lower, W_upper, Pt_lower, Pt_upper,Tt_lower, Tt_upper, V000, V100, V010, V110, V001, V101, V011, V111);
-// Interpolate and get result
-	string result = trilinear_interpolate(W, Pt, Tt, W_lower, W_upper, Pt_lower, Pt_upper, Tt_lower, Tt_upper, V000, V100, V010, V110, V001, V101, V011, V111);
-  // Vertices dimensions are W,Pt,Tt
+  // Interpolate and get result
+  string result = trilinear_interpolate(W, Pt, Tt, 
+    W_lower_bound, W_upper_bound, 
+    Pt_lower_bound, Pt_upper_bound,
+    Tt_lower_bound, Tt_upper_bound, 
+    V000_val, V100_val, V010_val, V110_val,
+    V001_val, V101_val, V011_val, V111_val);
+  
   return result;
 }
 
@@ -564,25 +706,69 @@ string trilinear_interpolate(real W, real Pt, real Tt,
                              string V001, string V101, string V011, string V111) {
   
   // Calculate interpolation weights
-  real w_d = (W - W_lower) / (W_upper - W_lower);
-  real p_d = (Pt - Pt_lower) / (Pt_upper - Pt_lower);
-  real t_d = (Tt - Tt_lower) / (Tt_upper - Tt_lower);
+  w_d = (W - W_lower) / (W_upper - W_lower);
+  p_d = (Pt - Pt_lower) / (Pt_upper - Pt_lower);
+  t_d = (Tt - Tt_lower) / (Tt_upper - Tt_lower);
   
   // Parse all 8 corner strings into Pt and Tt values
-  real Pt000, Tt000, Pt100, Tt100, Pt010, Tt010, Pt110, Tt110;
-  real Pt001, Tt001, Pt101, Tt101, Pt011, Tt011, Pt111, Tt111;
+  // V000
+  temp_eq_pos = V000.find("=");
+  temp_Pt_str = V000.substr(0, temp_eq_pos);
+  temp_Tt_str = V000.substr(temp_eq_pos + 1);
+  Pt000 = toReal(temp_Pt_str);
+  Tt000 = toReal(temp_Tt_str);
   
-  parse_string(V000, Pt000, Tt000);
-  parse_string(V100, Pt100, Tt100);
-  parse_string(V010, Pt010, Tt010);
-  parse_string(V110, Pt110, Tt110);
-  parse_string(V001, Pt001, Tt001);
-  parse_string(V101, Pt101, Tt101);
-  parse_string(V011, Pt011, Tt011);
-  parse_string(V111, Pt111, Tt111);
+  // V100
+  temp_eq_pos = V100.find("=");
+  temp_Pt_str = V100.substr(0, temp_eq_pos);
+  temp_Tt_str = V100.substr(temp_eq_pos + 1);
+  Pt100 = toReal(temp_Pt_str);
+  Tt100 = toReal(temp_Tt_str);
+  
+  // V010
+  temp_eq_pos = V010.find("=");
+  temp_Pt_str = V010.substr(0, temp_eq_pos);
+  temp_Tt_str = V010.substr(temp_eq_pos + 1);
+  Pt010 = toReal(temp_Pt_str);
+  Tt010 = toReal(temp_Tt_str);
+  
+  // V110
+  temp_eq_pos = V110.find("=");
+  temp_Pt_str = V110.substr(0, temp_eq_pos);
+  temp_Tt_str = V110.substr(temp_eq_pos + 1);
+  Pt110 = toReal(temp_Pt_str);
+  Tt110 = toReal(temp_Tt_str);
+  
+  // V001
+  temp_eq_pos = V001.find("=");
+  temp_Pt_str = V001.substr(0, temp_eq_pos);
+  temp_Tt_str = V001.substr(temp_eq_pos + 1);
+  Pt001 = toReal(temp_Pt_str);
+  Tt001 = toReal(temp_Tt_str);
+  
+  // V101
+  temp_eq_pos = V101.find("=");
+  temp_Pt_str = V101.substr(0, temp_eq_pos);
+  temp_Tt_str = V101.substr(temp_eq_pos + 1);
+  Pt101 = toReal(temp_Pt_str);
+  Tt101 = toReal(temp_Tt_str);
+  
+  // V011
+  temp_eq_pos = V011.find("=");
+  temp_Pt_str = V011.substr(0, temp_eq_pos);
+  temp_Tt_str = V011.substr(temp_eq_pos + 1);
+  Pt011 = toReal(temp_Pt_str);
+  Tt011 = toReal(temp_Tt_str);
+  
+  // V111
+  temp_eq_pos = V111.find("=");
+  temp_Pt_str = V111.substr(0, temp_eq_pos);
+  temp_Tt_str = V111.substr(temp_eq_pos + 1);
+  Pt111 = toReal(temp_Pt_str);
+  Tt111 = toReal(temp_Tt_str);
   
   // Interpolate Pt values
-  real Pt_interp = 
+  Pt_interp = 
     Pt000 * (1-w_d) * (1-p_d) * (1-t_d) +
     Pt100 * (w_d)   * (1-p_d) * (1-t_d) +
     Pt010 * (1-w_d) * (p_d)   * (1-t_d) +
@@ -593,7 +779,7 @@ string trilinear_interpolate(real W, real Pt, real Tt,
     Pt111 * (w_d)   * (p_d)   * (t_d);
   
   // Interpolate Tt values
-  real Tt_interp = 
+  Tt_interp = 
     Tt000 * (1-w_d) * (1-p_d) * (1-t_d) +
     Tt100 * (w_d)   * (1-p_d) * (1-t_d) +
     Tt010 * (1-w_d) * (p_d)   * (1-t_d) +
@@ -604,26 +790,12 @@ string trilinear_interpolate(real W, real Pt, real Tt,
     Tt111 * (w_d)   * (p_d)   * (t_d);
   
   // Return as concatenated string
-  string result = toStr(Pt_interp) + "=" + toStr(Tt_interp);
-  return result;
+  string result_str = toStr(Pt_interp) + "=" + toStr(Tt_interp);
+  return result_str;
 }
 
-// Helper function
-void parse_string(string input, real &Pt_val, real &Tt_val) {
-  int eq_pos = input.find("=");
-  string Pt_str = input.substr(0, eq_pos);
-  string Tt_str = input.substr(eq_pos + 1);
-  Pt_val = toReal(Pt_str);
-  Tt_val = toReal(Tt_str);
-}
-
-void read_csv(string filename, 
-              real[] &W_grid, 
-              real[] &Pt_grid, 
-              real[] &Tt_grid, 
-              string[][][] &RDE_data) {
+void read_csv(string filename) {
   
-  // Open the CSV file for reading
   InFileStream csv;
   csv.open(filename);
   
@@ -632,33 +804,46 @@ void read_csv(string filename,
     return;
   }
   
-  // Temporary storage for all data points
   real[] W_all;
   real[] Pt_all;
   real[] Tt_all;
   string[] data_all;
   
-  // Read all lines from CSV
   string line;
-  int count = 0;
+  int count;
+  int comma1;
+  int comma2;
+  int comma3;
+  real W_val;
+  real Pt_val;
+  real Tt_val;
+  string data_str;
+  int idx;
+  int i;
+  int j;
+  int k;
+  int idx_1D;
+  
+  count = 0;
+  
   while (csv.getline(line)) {
-    if (line.length() == 0) continue; // Skip empty lines
-    
-    // Parse: W,Pt,Tt,Pt_out=Tt_out
-    int comma1 = line.find(",");
-    int comma2 = line.find(",", comma1 + 1);
-    int comma3 = line.find(",", comma2 + 1);
-    
-    real W_val = toReal(line.substr(0, comma1));
-    real Pt_val = toReal(line.substr(comma1 + 1, comma2 - comma1 - 1));
-    real Tt_val = toReal(line.substr(comma2 + 1, comma3 - comma2 - 1));
-    string data_str = line.substr(comma3 + 1);
-    
-    W_all.append(W_val);
-    Pt_all.append(Pt_val);
-    Tt_all.append(Tt_val);
-    data_all.append(data_str);
-    count++;
+    if (line.length() > 0) {
+      // Parse: W,Pt,Tt,Pt_out=Tt_out
+      comma1 = line.find(",");
+      comma2 = line.find(",", comma1 + 1);
+      comma3 = line.find(",", comma2 + 1);
+      
+      W_val = toReal(line.substr(0, comma1));
+      Pt_val = toReal(line.substr(comma1 + 1, comma2 - comma1 - 1));
+      Tt_val = toReal(line.substr(comma2 + 1, comma3 - comma2 - 1));
+      data_str = line.substr(comma3 + 1);
+      
+      W_all.append(W_val);
+      Pt_all.append(Pt_val);
+      Tt_all.append(Tt_val);
+      data_all.append(data_str);
+      count++;
+    }
   }
   
   csv.close();
@@ -668,46 +853,51 @@ void read_csv(string filename,
   Pt_grid = get_unique_sorted(Pt_all);
   Tt_grid = get_unique_sorted(Tt_all);
   
-  int nW = W_grid.entries();
-  int nPt = Pt_grid.entries();
-  int nTt = Tt_grid.entries();
+  nW_size = W_grid.entries();
+  nPt_size = Pt_grid.entries();
+  nTt_size = Tt_grid.entries();
   
-  // Resize 3D array
-  RDE_data.resize(nW, nPt, nTt);
+  // Resize 1D array to hold all data
+  RDE_data.resize(nW_size * nPt_size * nTt_size);
   
-  // Populate 3D array
-  for (int idx = 0; idx < count; idx++) {
+  // Populate 1D array
+  for (idx = 0; idx < count; idx++) {
     // Find indices for this data point
-    int i = find_index(W_grid, W_all[idx]);
-    int j = find_index(Pt_grid, Pt_all[idx]);
-    int k = find_index(Tt_grid, Tt_all[idx]);
+    i = find_index(W_grid, W_all[idx]);
+    j = find_index(Pt_grid, Pt_all[idx]);
+    k = find_index(Tt_grid, Tt_all[idx]);
     
-    RDE_data[i][j][k] = data_all[idx];
+    // Convert to 1D index
+    idx_1D = get_1D_index(i, j, k);
+    RDE_data[idx_1D] = data_all[idx];
   }
 }
 
-// Helper function to get unique sorted values from an array
-real[] get_unique_sorted(real[] arr) {
+real[] get_unique_sorted(real arr) {
   real[] unique;
+  int i;
+  int j;
+  int found;
+  real temp;
   
-  for (int i = 0; i < arr.entries(); i++) {
-    int found = FALSE;
-    for (int j = 0; j < unique.entries(); j++) {
+  for (i = 0; i < arr.entries(); i++) {
+    found = 0;
+    for (j = 0; j < unique.entries(); j++) {
       if (abs(arr[i] - unique[j]) < 0.0001) {
-        found = TRUE;
+        found = 1;
         break;
       }
     }
-    if (!found) {
+    if (found == 0) {
       unique.append(arr[i]);
     }
   }
   
   // Simple bubble sort
-  for (int i = 0; i < unique.entries() - 1; i++) {
-    for (int j = 0; j < unique.entries() - i - 1; j++) {
+  for (i = 0; i < unique.entries() - 1; i++) {
+    for (j = 0; j < unique.entries() - i - 1; j++) {
       if (unique[j] > unique[j+1]) {
-        real temp = unique[j];
+        temp = unique[j];
         unique[j] = unique[j+1];
         unique[j+1] = temp;
       }
@@ -717,9 +907,9 @@ real[] get_unique_sorted(real[] arr) {
   return unique;
 }
 
-// Helper function to find exact index of a value in an array
-int find_index(real[] grid, real value) {
-  for (int i = 0; i < grid.entries(); i++) {
+int find_index(real grid, real value) {
+  int i;
+  for (i = 0; i < grid.entries(); i++) {
     if (abs(grid[i] - value) < 0.0001) {
       return i;
     }
@@ -727,55 +917,53 @@ int find_index(real[] grid, real value) {
   return 0; // Default to first index if not found
 }
 
-void read_RDE_data(real W, real Pt, real Tt,
-                   real &W_lower, real &W_upper,
-                   real &Pt_lower, real &Pt_upper,
-                   real &Tt_lower, real &Tt_upper,
-                   string &V000, string &V100, string &V010, string &V110,
-                   string &V001, string &V101, string &V011, string &V111) {
+void read_RDE_data(real W, real Pt, real Tt) {
   
-  real[] W_grid;     // Array of all W values in the table
-  real[] Pt_grid;    // Array of all Pt values in the table
-  real[] Tt_grid;    // Array of all Tt values in the table
-  string[][][] RDE_data;  // 3D array of "Pt=Tt" strings
+  int i_W_lower;
+  int i_W_upper;
+  int i_Pt_lower;
+  int i_Pt_upper;
+  int i_Tt_lower;
+  int i_Tt_upper;
   
-  // Read CSV file to populate arrays
-  read_csv("RDE_performance_data.csv", W_grid, Pt_grid, Tt_grid, RDE_data);
+  // Read CSV file once
+  if (csv_loaded == 0) {
+    read_csv("RDE_performance_data.csv");
+    csv_loaded = 1;
+  }
   
   // Find W bounds
-  int i_W_lower = find_lower_index(W_grid, W);
-  int i_W_upper = i_W_lower + 1;
-  W_lower = W_grid[i_W_lower];
-  W_upper = W_grid[i_W_upper];
+  i_W_lower = find_lower_index(W_grid, W);
+  i_W_upper = i_W_lower + 1;
+  W_lower_bound = W_grid[i_W_lower];
+  W_upper_bound = W_grid[i_W_upper];
 
   // Find Pt bounds
-  int i_Pt_lower = find_lower_index(Pt_grid, Pt);
-  int i_Pt_upper = i_Pt_lower + 1;
-  Pt_lower = Pt_grid[i_Pt_lower];
-  Pt_upper = Pt_grid[i_Pt_upper];
+  i_Pt_lower = find_lower_index(Pt_grid, Pt);
+  i_Pt_upper = i_Pt_lower + 1;
+  Pt_lower_bound = Pt_grid[i_Pt_lower];
+  Pt_upper_bound = Pt_grid[i_Pt_upper];
   
   // Find Tt bounds
-  int i_Tt_lower = find_lower_index(Tt_grid, Tt);
-  int i_Tt_upper = i_Tt_lower + 1;
-  Tt_lower = Tt_grid[i_Tt_lower];
-  Tt_upper = Tt_grid[i_Tt_upper];
+  i_Tt_lower = find_lower_index(Tt_grid, Tt);
+  i_Tt_upper = i_Tt_lower + 1;
+  Tt_lower_bound = Tt_grid[i_Tt_lower];
+  Tt_upper_bound = Tt_grid[i_Tt_upper];
 
-  V000 = RDE_data[i_W_lower][i_Pt_lower][i_Tt_lower];
-  V100 = RDE_data[i_W_upper][i_Pt_lower][i_Tt_lower];
-  V010 = RDE_data[i_W_lower][i_Pt_upper][i_Tt_lower];
-  V110 = RDE_data[i_W_upper][i_Pt_upper][i_Tt_lower];
-  V001 = RDE_data[i_W_lower][i_Pt_lower][i_Tt_upper];
-  V101 = RDE_data[i_W_upper][i_Pt_lower][i_Tt_upper];
-  V011 = RDE_data[i_W_lower][i_Pt_upper][i_Tt_upper];
-  V111 = RDE_data[i_W_upper][i_Pt_upper][i_Tt_upper];
+  // Get vertex values using 1D indexing
+  V000_val = RDE_data[get_1D_index(i_W_lower, i_Pt_lower, i_Tt_lower)];
+  V100_val = RDE_data[get_1D_index(i_W_upper, i_Pt_lower, i_Tt_lower)];
+  V010_val = RDE_data[get_1D_index(i_W_lower, i_Pt_upper, i_Tt_lower)];
+  V110_val = RDE_data[get_1D_index(i_W_upper, i_Pt_upper, i_Tt_lower)];
+  V001_val = RDE_data[get_1D_index(i_W_lower, i_Pt_lower, i_Tt_upper)];
+  V101_val = RDE_data[get_1D_index(i_W_upper, i_Pt_lower, i_Tt_upper)];
+  V011_val = RDE_data[get_1D_index(i_W_lower, i_Pt_upper, i_Tt_upper)];
+  V111_val = RDE_data[get_1D_index(i_W_upper, i_Pt_upper, i_Tt_upper)];
 }
 
-// Helper function: Find the index of the largest grid value that's <= query value
-int find_lower_index(real[] grid, real query_value) {
-  // Binary search or linear search through grid array
-  // Return i so that: grid[i] <= query_value < grid[i+1]
-  
-  for (int i = 0; i < grid.entries() - 1; i++) {
+int find_lower_index(real grid, real query_value) {
+  int i;
+  for (i = 0; i < grid.entries() - 1; i++) {
     if (query_value >= grid[i] && query_value < grid[i+1]) {
       return i;
     }
@@ -783,6 +971,38 @@ int find_lower_index(real[] grid, real query_value) {
   
   // Edge case: if query is beyond the table, clamp to last valid index
   return grid.entries() - 2;  // Return second-to-last index
+}
+int get_1D_index(int i, int j, int k) {
+  // Convert 3D array index [i][j][k] to 1D index
+  // Formula: index = i * (nPt * nTt) + j * nTt + k
+  return i * (nPt_size * nTt_size) + j * nTt_size + k;
+}
+
+int verify() {
+  // Check that inlet port is linked
+  if (!Fl_I.isLinked()) {
+    cerr << "ERROR: Burner " << getName() << " inlet port Fl_I is not linked" << endl;
+    return FALSE;
+  }
+  
+  // Check that outlet port is linked
+  if (!Fl_O.isLinked()) {
+    cerr << "ERROR: Burner " << getName() << " outlet port Fl_O is not linked" << endl;
+    return FALSE;
+  }
+  
+  // Check that fuel inlet port is linked
+  if (!Fu_I.isLinked()) {
+    cerr << "ERROR: Burner " << getName() << " fuel inlet port Fu_I is not linked" << endl;
+    return FALSE;
+  }
+  
+  // Verify CSV file can be loaded (optional, but good check)
+  if (csv_loaded == 0) {
+    cout << "INFO: CSV will be loaded on first calculate() call" << endl;
+  }
+  
+  return TRUE;
 }
 
  
