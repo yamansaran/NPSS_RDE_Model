@@ -616,7 +616,7 @@ void parse_string(string input, real &Pt_val, real &Tt_val) {
   Tt_val = toReal(Tt_str);
 }
 
-void read_data(real W, real Pt, real Tt,
+void read_RDE_data(real W, real Pt, real Tt,
                                     real &W_lower, real &W_upper,
                                     real &Pt_lower, real &Pt_upper,
                                     real &Tt_lower, real &Tt_upper,
